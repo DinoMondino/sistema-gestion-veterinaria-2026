@@ -3,8 +3,11 @@
 
 ## Integrantes
 Modino, Maria Delfina
+
 Sarmiento, Augusto
+
 Olivera Villa, Julieta
+
 ---
 ## 1. Propuesta de proyecto
 Sistema diseñado para unificar la gestión clínica y administrativa tanto de mascotas (pequeños animales) como de establecimientos de campo (grandes animales / producción). 
