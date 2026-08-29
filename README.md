@@ -10,12 +10,12 @@ Olivera Villa, Julieta
 
 ---
 ## 1. Propuesta de proyecto
-Sistema diseñado para unificar la gestión clínica y administrativa tanto de mascotas (pequeños animales) como de establecimientos de campo (grandes animales / producción). 
-Se encarga de un seguimiento clínico integral, dar accesibilidad a información de correlación orientativa entre síntomas, patologías y tratamientos, control de interacciones medicamentosas, contraindicaciones y tiempos de carencia y funciona como soporte para la planificación de tratamientos individuales y planes sanitarios masivos, para su trazabilidad, toma de decisiones y planificación adaptable a la heterogeneidad de las especies, aumentando la validez de los datos clínicos y la seguridad de los tratamientos.
+Sistema para veterinarias que centraliza turnos, historia clínica, calendario de vacunación y registro de pagos, pensado para tres perfiles de uso (secretaria, veterinario/a y dueño de mascota), con consulta a la base OMIA como apoyo al diagnóstico veterinario sobre patologías hereditarias/genéticas.
 
 ---
 ## 2. Modelo de ciclo de vida
 Se seleccionó un Modelo Incremental + Ágil: Permite entregar un núcleo administrativo y un MVP funcional rápido para validar con usuarios reales antes de incorporar módulos complejos.
+Los requerimientos son razonablemente claros por rol (secretaria, veterinario, dueño), pero es esperable que se ajusten a medida que el grupo profundice en el dominio clínico y en la integración con OMIA, por eso conviene entregar y validar funcionalidad por incrementos en vez de esperar al sistema completo.
 Se aíslan riesgos técnicos dejándolos para iteraciones posteriores y se implementarán reuniones breves e iteraciones controladas para acompañar la evolución dinámica de los requerimientos en el dominio veterinario.
 
 ---
