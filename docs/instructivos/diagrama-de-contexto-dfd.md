@@ -39,7 +39,7 @@ flowchart TD
 - **Tutor/a de Mascota**: solicita turnos y consulta información de su(s) mascota(s).
 - **Base de Datos Externa OMIA**: fuente de referencia externa sobre patologías y código genético animal (consulta de solo lectura, no se sincroniza como base propia — ver justificación en `docs/requirements/srs.md`, sección 1.6).
 
-> ⚠️ **Nota de consistencia:** esta versión usa `Tutor/a de Mascota` y `Médico/a Veterinario/a` en vez de `Dueño/a de mascota` y `Veterinario/a`, que es como aparecen esos mismos roles en `docs/requirements/srs.md` (stakeholders, modelo de dominio, casos de uso). Antes de la entrega, unificar la terminología en todo el repo — no importa cuál se elija, pero tiene que ser la misma en todos los documentos.
+> 
 
 ## Checklist de verificación (según el instructivo)
 
