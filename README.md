@@ -19,4 +19,4 @@ Los requerimientos son razonablemente claros por rol (secretaria, veterinario, d
 Se aíslan riesgos técnicos dejándolos para iteraciones posteriores y se implementarán reuniones breves e iteraciones controladas para acompañar la evolución dinámica de los requerimientos en el dominio veterinario.
 
 ---
-* [Ver SRS: Stakeholders y usuarios](docs/requirements/srs.md)
+* [Ver SRS: Canvas de descubrimiento](docs/requirements/srs.md)

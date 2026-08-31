@@ -1,4 +1,4 @@
-# Software Requirements Specification - **Proyecto sistema de gestión veterinaria**
+# Software Requirements Specification - *Proyecto sistema de gestión veterinaria*
 
 ## Visión general del proyecto y alcance
 ### Dominio y Problema
