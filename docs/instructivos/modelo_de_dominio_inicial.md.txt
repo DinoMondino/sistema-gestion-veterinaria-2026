@@ -84,7 +84,7 @@ classDiagram
       +descripcion
       +fechaRegistro
     }
-    Mascota "1" --> "0..*" ReaccionAdversaRegistrada : tiene registradas
+    Mascota "1" --> "0..*" ReaccionAdversaRegistrada : "tiene registradas"
 
     class Pago {
       +id
