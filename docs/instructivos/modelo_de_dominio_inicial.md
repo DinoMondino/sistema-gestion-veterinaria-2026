@@ -1,0 +1,110 @@
+## 2. Modelo de dominio inicial
+
+```mermaid
+classDiagram
+    class Usuario {
+      +id
+      +nombre
+      +email
+      +rol
+    }
+    class Secretaria
+    class Veterinario {
+      +matricula
+    }
+    class DuenioMascota {
+      +telefono
+      +direccion
+    }
+    Usuario <|-- Secretaria
+    Usuario <|-- Veterinario
+    Usuario <|-- DuenioMascota
+
+    class Mascota {
+      +id
+      +nombre
+      +especie
+      +raza
+      +fechaNacimiento
+      +sexo
+    }
+    DuenioMascota "1" --> "0..*" Mascota : posee
+
+    class HistoriaClinica {
+      +id
+      +fechaCreacion
+    }
+    Mascota "1" --> "1" HistoriaClinica : tiene
+
+    class Consulta {
+      +id
+      +fecha
+      +motivo
+      +diagnostico
+      +tratamiento
+    }
+    HistoriaClinica "1" --> "0..*" Consulta : registra
+    Veterinario "1" --> "0..*" Consulta : atiende
+
+    class Vacuna {
+      +id
+      +nombre
+      +enfermedadPrevenida
+      +frecuenciaRecomendada
+    }
+    class AplicacionVacuna {
+      +id
+      +fechaAplicacion
+      +proximaDosis
+      +lote
+    }
+    Mascota "1" --> "0..*" AplicacionVacuna : recibe
+    Vacuna "1" --> "0..*" AplicacionVacuna : corresponde
+    Veterinario "1" --> "0..*" AplicacionVacuna : aplica
+
+    class Turno {
+      +id
+      +fechaHora
+      +estado
+    }
+    Mascota "1" --> "0..*" Turno : agenda
+    Veterinario "1" --> "0..*" Turno : atiende
+
+    class Prescripcion {
+      +id
+      +farmaco
+      +dosis
+      +indicaciones
+    }
+    Consulta "1" --> "0..*" Prescripcion : incluye
+
+    class ReaccionAdversaRegistrada {
+      +id
+      +farmaco
+      +descripcion
+      +fechaRegistro
+    }
+    Mascota "1" --> "0..*" ReaccionAdversaRegistrada : "tiene registradas"
+
+    class Pago {
+      +id
+      +fecha
+      +monto
+      +metodoPago
+      +concepto
+    }
+    Consulta "0..1" --> "0..*" Pago : genera
+    DuenioMascota "1" --> "0..*" Pago : realiza
+
+    class PatologiaReferencia {
+      +idOMIA
+      +nombre
+      +especieAsociada
+      +descripcion
+    }
+    Consulta "0..*" --> "0..*" PatologiaReferencia : consulta_en_OMIA
+```
+
+> `PatologiaReferencia` representa el resultado de una consulta a OMIA (referencia externa), no una tabla replicada de la base OMIA completa.
+
+---
