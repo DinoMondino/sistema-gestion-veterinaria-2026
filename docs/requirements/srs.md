@@ -66,13 +66,8 @@ El sistema maneja datos personales identificables tanto de tutores de mascotas c
 ## Lista de requerimientos funcionales
 * [Requerimientos funcionales](RF.md): Proceso Seleccionado: Gestión Clínica e Historial
 ---
-## Casos de uso
-* [Casos de Uso](use-cases.md): Descripción detallada de los flujos de interacción con el sistema
+## Slices: Historias de usuario + Casos de uso
+* [Historias de Usuario + Casos de uso](slices.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.
 ---
-## Historias de usuario
-* [Historias de Usuario (HUs)](user-stories.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.
----
-## Slices
-* 
 ## Atributos de calidad
 * [Atributos de Calidad](quality-attributes.md): Requerimientos no funcionales (rendimiento, seguridad, usabilidad).
