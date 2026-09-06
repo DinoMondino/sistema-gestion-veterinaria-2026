@@ -23,3 +23,7 @@
 *RF-11:* El sistema debe informar al usuario los errores de validación encontrados al intentar guardar un registro clínico incompleto o con datos inválidos, indicando con precisión el campo y el motivo del fallo.
 
 *RF-12:* El sistema debe permitir generar gráficos o reportes tabulares de la evolución cronológica del peso del paciente a partir de los datos históricos almacenados.
+
+---
+## Slices: Historias de usuario + Casos de uso
+* [Historias de Usuario + Casos de uso](slices.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.

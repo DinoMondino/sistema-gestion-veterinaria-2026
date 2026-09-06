@@ -1,34 +1,34 @@
 # Especificación de Casos de Uso, Slices y Historias de Usuario
 ---
 Proceso Seleccionado: Gestión Clínica e Historial
+
+La elección de este proceso responde a nuestra estrategia incremental, representa el núcleo de valor del sistema de software veterinario. El módulo concentra complejidad de dominio (la diversidad de datos clínicos, el seguimiento temporal de pesos, la aplicación de vacunas y las reglas de validación sanitaria). Al acotar el desarrollo profundo a este único proceso central, se evita el riesgo de sobrediseño y se garantiza un nivel de calidad técnico óptimo para un equipo reducido en el marco de un cuatrimestre.
 ---
-## Casos de uso
-### CU-01 - Registrar y Actualizar Historial Clínico
+## Casos de Uso Esenciales
+### CU-01 - Registrar Atención y Evolución Clínica
 Actor Principal: Médico Veterinario
 
-Objetivo: Registrar una nueva atención médica para un paciente, actualizando de forma integrada su historial clínico (peso, síntomas, diagnóstico, vacunas, patologías, procedimientos y tratamientos).
+Objetivo: Registrar una nueva atención médica estructurada para un paciente, actualizando de forma integrada su historial clínico (síntomas, diagnóstico, vacunas, patologías, procedimientos) y su peso actual.
 
-Realiza: RF-01, RF-02, RF-03, RF-04, RF-05, RF-06, RF-10
+Realiza: RF-01, RF-02, RF-03, RF-04, RF-05, RF-10
 
 Precondición: El médico veterinario ha iniciado sesión en el sistema con su cuenta habilitada y el paciente se encuentra registrado previamente.
 
 Flujo Principal (Slice Básico):
 
-1- El veterinario busca y selecciona al paciente en el sistema.
+El veterinario busca y selecciona al paciente en el sistema.
 
-2- El sistema muestra la ficha e historial clínico cronológico base del paciente.
+El sistema muestra la ficha e historial clínico cronológico base del paciente.
 
-3- El veterinario ingresa los datos de la consulta: fecha, síntomas detectados, diagnóstico preliminar y observaciones en texto libre.
+El veterinario ingresa los datos de la consulta: fecha, síntomas detectados, diagnóstico preliminar y observaciones en texto libre.
 
-4- El veterinario ingresa el peso actual del paciente.
+El veterinario ingresa el peso actual del paciente y registra los datos complementarios de la atención (vacunas aplicadas con número de lote y vencimiento, patologías asociadas y procedimientos realizados).
 
-5- El veterinario registra los datos complementarios de la atención (vacunas aplicadas con número de lote y vencimiento, patologías asociadas, procedimientos realizados y medicaciones activas).
+El sistema valida que todos los campos obligatorios cumplan con los formatos y rangos esperados.
 
-6- El sistema valida que todos los campos obligatorios cumplan con los formatos y rangos esperados (como fechas válidas y valores numéricos positivos para el peso).
+El sistema almacena la información de la consulta, actualiza el historial cronológico y el peso vigente del paciente.
 
-7- El sistema almacena la información de la consulta, actualiza el historial cronológico y el peso vigente del paciente.
-
-8- El sistema muestra un mensaje de confirmación del registro exitoso y actualiza la vista unificada del historial.
+El sistema muestra un mensaje de confirmación del registro exitoso y actualiza la vista unificada del historial.
 
 Postcondición: La consulta clínica y sus actualizaciones quedan guardadas y asociadas de forma permanente en el historial cronológico del paciente.
 
@@ -40,38 +40,65 @@ A2: Edición o corrección de una entrada previa en el historial clínico por pa
 
 E1: Interrupción de la red durante el almacenamiento de la consulta.
 
-CU-02 - Consultar Historial y Referencia Externa de Patologías
+### CU-02 - Consultar Historial Clínico
 Actor Principal: Médico Veterinario
 
-Objetivo: Consultar el historial cronológico unificado de un paciente y enlazar con la base de datos externa OMIA para verificar patologías.
+Objetivo: Visualizar el historial cronológico completo de un paciente en una vista consolidada y generar gráficos o reportes de la evolución temporal de su peso.
 
-Realiza: RF-07, RF-09, RF-12
+Realiza: RF-07, RF-12
 
-Precondición: El paciente cuenta con registros previos en el sistema.
+Precondición: El paciente cuenta con registros históricos previos en el sistema.
 
 Flujo Principal (Slice Básico):
 
-1- El veterinario selecciona al paciente y solicita ver su historial clínico completo.
+El veterinario selecciona al paciente y solicita ver su historial clínico completo.
 
-2- El sistema recupera y muestra en una vista unificada las consultas, pesos, vacunas, patologías y procedimientos históricos.
+El sistema recupera y muestra en una vista unificada las consultas, pesos, vacunas, patologías y procedimientos históricos.
 
-3- El veterinario selecciona una patología específica y solicita consultar su referencia externa.
+El veterinario solicita visualizar la evolución temporal del peso del paciente.
 
-4- El sistema abre un enlace de lectura directa hacia la base de datos OMIA utilizando el término seleccionado.
+El sistema genera y muestra un gráfico o reporte tabular con el historial de pesos registrados a lo largo del tiempo.
 
-5- El sistema genera de forma opcional gráficos de la evolución cronológica del peso del paciente.
-
-Postcondición: El veterinario visualiza el historial consolidado y la referencia externa requerida sin alterar los datos del sistema.
+Postcondición: El veterinario visualiza el historial consolidado y la evolución métrica del paciente sin alterar los datos del sistema.
 
 Slices Secundarios:
 
-A1: Sin conexión a internet al intentar acceder a la referencia externa OMIA.
+A1: El paciente seleccionado no posee registros previos suficientes para generar el gráfico de peso.
 
-A2: El paciente seleccionado no posee registros previos de peso para graficar.
+E1: Error de renderizado del componente gráfico en la interfaz.
 
-### Historias de Usuario (Derivadas de Slices)
-HU-01.A1 - Manejo de datos obligatorios incompletos o con formato inválido
-Deriva de: CU-01, slice A1 (vinculado a RF-10 y RF-11)
+CU-03 - Gestionar Tratamientos y Validar Alertas Sanitarias
+Actor Principal: Médico Veterinario
+
+Objetivo: Registrar las medicaciones activas del paciente y evaluar alertas automáticas ante posibles contraindicaciones o interacciones medicamentosas elementales.
+
+Realiza: RF-06, RF-10, RF-11
+
+Precondición: El médico veterinario se encuentra dentro de una consulta clínica activa y cuenta con el listado de fármacos disponibles.
+
+Flujo Principal (Slice Básico):
+
+El veterinario selecciona la opción de prescribir medicación o suplementación en el plan de tratamiento del paciente.
+
+El sistema verifica el listado de fármacos activos actuales del paciente.
+
+El sistema valida las reglas de negocio y descarta la existencia de interacciones críticas.
+
+El sistema registra la nueva medicación activa en el plan de tratamiento.
+
+El sistema confirma el almacenamiento exitoso de la prescripción.
+
+Postcondición: La medicación queda asociada formalmente al plan de tratamiento activo del paciente.
+
+Slices Secundarios:
+
+A1: Detección automática de una posible interacción medicamentosa elemental o contraindicación (RF-10).
+
+A2: Intento de registrar un fármaco con fecha de vigencia vencida o datos incompletos.
+
+Historias de Usuario (Derivadas de Slices)
+HU-01 - Manejo de datos obligatorios incompletos o con formato inválido
+Deriva de: CU-01, slice A1 (RF-10 y RF-11)
 
 Como Médico Veterinario,
 
@@ -87,8 +114,8 @@ When: El veterinario presiona el botón "Guardar Consulta".
 
 Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y muestra un mensaje indicando con precisión el motivo del fallo.
 
-HU-01.A2 - Edición de entradas previas en el historial clínico
-Deriva de: CU-01, slice A2 (vinculado a RF-08)
+HU-02 - Edición de entradas previas en el historial clínico
+Deriva de: CU-01, slice A2 (RF-08)
 
 Como Médico Veterinario,
 
@@ -103,3 +130,20 @@ Given: El veterinario con sesión activa visualiza el historial clínico y selec
 When: El veterinario edita la observación clínica y confirma los cambios.
 
 Then: El sistema actualiza el registro seleccionado en la base de datos y refleja la modificación con un indicador de actualización en la vista del historial.
+
+HU-03 - Notificación de alerta por interacción medicamentosa
+Deriva de: CU-03, slice A1 (RF-10)
+
+Como Médico Veterinario,
+
+quiero visualizar una advertencia clara cuando el sistema detecta una interacción o contraindicación entre la medicación recetada y los fármacos activos del paciente,
+
+para reevaluar la prescripción y prevenir riesgos clínicos durante el tratamiento.
+
+Criterios de Aceptación (GWT):
+
+Given: El paciente tiene una medicación activa registrada que genera conflicto con el nuevo fármaco que el veterinario intenta prescribir.
+
+When: El veterinario selecciona y confirma la nueva prescripción en el sistema.
+
+Then: El sistema despliega una alerta visual detallando la incompatibilidad detectada, permitiendo al profesional justificar su decisión o cancelar la acción.
