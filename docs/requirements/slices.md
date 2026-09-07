@@ -10,7 +10,7 @@ Actor Principal: Médico Veterinario
 
 Objetivo: Registrar una nueva atención médica estructurada para un paciente, actualizando de forma integrada su historial clínico (síntomas, diagnóstico, vacunas, patologías, procedimientos) y su peso actual.
 
-Realiza: RF-01, RF-02, RF-03, RF-04, RF-05, RF-10
+Realiza: RF-01, RF-02, RF-03, RF-04, RF-05, RF-08, RF-09, RF-10
 
 Precondición: El médico veterinario ha iniciado sesión en el sistema con su cuenta habilitada y el paciente se encuentra registrado previamente.
 
@@ -37,6 +37,8 @@ Slices Secundarios:
 A1: Datos obligatorios incompletos o con formato inválido (vinculado a RF-11).
 
 A2: Edición o corrección de una entrada previa en el historial clínico por parte del veterinario (vinculado a RF-08).
+
+A3: El veterinario indaga una posible patología hereditaria/genética consultando la base externa OMIA por especie/raza antes de confirmar el diagnóstico (vinculado a RF-09). Es una consulta opcional de solo lectura: su resultado es informativo y no bloquea el flujo principal.
 
 E1: Interrupción de la red durante el almacenamiento de la consulta.
 
