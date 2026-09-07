@@ -20,7 +20,7 @@ Si el sistema funciona la secretaria arma la agenda del día sin llamar por tel�
 
 ### Alcance Realista
 Dentro del alcance en el cuatrimestre:
-  * Registro de pacientes tanto individuales (mascotas) como por lotes/rodeos (animales de campo).
+  * Registro de pacientes individuales (mascotas) 
   * Agenda de turnos (crear, ver, cancelar).
   * Historial básico de vacunas, peso y consultas clínicas.
   * Registro de pagos asociados a consultas (sin facturación fiscal).
