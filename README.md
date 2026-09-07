@@ -1,4 +1,4 @@
-# Sistema de gestión clínica veterinaria (Pequeños y grandes animales)
+# Sistema de gestión clínica veterinaria (Pequeños animales)
 ## Ingeniería de Software (2026)
 
 ## Integrantes
