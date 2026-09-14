@@ -3,6 +3,7 @@
 Proceso Seleccionado: Gestión Clínica e Historial
 
 La elección de este proceso responde a nuestra estrategia incremental, representa el núcleo de valor del sistema de software veterinario. El módulo concentra complejidad de dominio (la diversidad de datos clínicos, el seguimiento temporal de pesos, la aplicación de vacunas y las reglas de validación sanitaria). Al acotar el desarrollo profundo a este único proceso central, se evita el riesgo de sobrediseño y se garantiza un nivel de calidad técnico óptimo para un equipo reducido en el marco de un cuatrimestre.
+
 ---
 ## Casos de Uso Esenciales
 ### CU-01 - Registrar Atención y Evolución Clínica
@@ -69,7 +70,7 @@ A1: El paciente seleccionado no posee registros previos suficientes para generar
 
 E1: Error de renderizado del componente gráfico en la interfaz.
 
-CU-03 - Gestionar Tratamientos y Validar Alertas Sanitarias
+### CU-03 - Gestionar Tratamientos y Validar Alertas Sanitarias
 Actor Principal: Médico Veterinario
 
 Objetivo: Registrar las medicaciones activas del paciente y evaluar alertas automáticas ante posibles contraindicaciones o interacciones medicamentosas elementales.
@@ -98,8 +99,8 @@ A1: Detección automática de una posible interacción medicamentosa elemental o
 
 A2: Intento de registrar un fármaco con fecha de vigencia vencida o datos incompletos.
 
-Historias de Usuario (Derivadas de Slices)
-HU-01 - Manejo de datos obligatorios incompletos o con formato inválido
+## Historias de Usuario (Derivadas de Slices)
+### HU-01 - Manejo de datos obligatorios incompletos o con formato inválido
 Deriva de: CU-01, slice A1 (RF-10 y RF-11)
 
 Como Médico Veterinario,
@@ -116,7 +117,7 @@ When: El veterinario presiona el botón "Guardar Consulta".
 
 Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y muestra un mensaje indicando con precisión el motivo del fallo.
 
-HU-02 - Edición de entradas previas en el historial clínico
+### HU-02 - Edición de entradas previas en el historial clínico
 Deriva de: CU-01, slice A2 (RF-08)
 
 Como Médico Veterinario,
@@ -133,7 +134,7 @@ When: El veterinario edita la observación clínica y confirma los cambios.
 
 Then: El sistema actualiza el registro seleccionado en la base de datos y refleja la modificación con un indicador de actualización en la vista del historial.
 
-HU-03 - Notificación de alerta por interacción medicamentosa
+### HU-03 - Notificación de alerta por interacción medicamentosa
 Deriva de: CU-03, slice A1 (RF-10)
 
 Como Médico Veterinario,
