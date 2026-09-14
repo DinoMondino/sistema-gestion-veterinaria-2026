@@ -2,7 +2,7 @@
 ## Ingeniería de Software (2026)
 
 ## Integrantes
-Modino, Maria Delfina
+Mondino, Maria Delfina
 
 Sarmiento, Augusto
 
