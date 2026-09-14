@@ -82,9 +82,12 @@ classDiagram
       +id
       +farmaco
       +descripcion
+      +severidad
       +fechaRegistro
     }
-    Mascota "1" --> "0..*" ReaccionAdversaRegistrada : "tiene registradas"
+    Mascota "1" --> "0..*" ReaccionAdversaRegistrada : tiene_registradas
+    Consulta "1" --> "0..*" ReaccionAdversaRegistrada : detecta
+    Veterinario "1" --> "0..*" ReaccionAdversaRegistrada : registra
 
     class Pago {
       +id
