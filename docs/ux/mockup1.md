@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}{% endblock %} · VetGestión</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<header>
+ <a class="logo" href="{{ url_for('inicio') }}">🐾 VetGestión</a>
+ <form class="buscar" action="{{ url_for('buscar') }}" role="search">
+  <label for="q" class="sr">Buscar paciente</label>
+  <input id="q" name="q" list="pl" placeholder="Buscar paciente por nombre…" autocomplete="off">
+  <datalist id="pl">{% for x in pacientes.values() %}<option value="{{ x.nombre }}">{% endfor %}</datalist>
+  <button class="btn sec">Buscar</button>
+ </form>
+ <span class="user">{{ vet }} · Médico/a Veterinario/a</span>
+</header>
+{% if p %}<section class="paciente" aria-label="Paciente activo">
+ <strong>🐾 {{ p.nombre }}</strong><span>{{ p.especie }} · {{ p.raza }} · Nac. {{ p.nac }}</span><span>Tutor/a: {{ p.tutor }}</span>
+ <span>Último peso: <b>{{ p.peso }} kg</b></span><span>Tratamientos activos: {{ p.activos|join(', ') or 'ninguno' }}</span>
+</section>{% endif %}
+<main id="main">
+ <nav class="crumbs" aria-label="Ubicación">{% block crumbs %}{% endblock %}</nav>
+ {% for cat, m in get_flashed_messages(with_categories=true) %}<div class="alert {{ cat }}" role="status">{{ '✔' if cat == 'ok' else '⚠' }} {{ m }}</div>{% endfor %}
+ {% block body %}{% endblock %}
+</main>
+<footer>Maquetado con datos ficticios · Atajo: Ctrl+Enter guarda el formulario</footer>
+<script>
+const f=document.querySelector('form.editable');
+if(f){let d=false;f.addEventListener('input',()=>d=true);f.addEventListener('submit',()=>d=false);
+window.addEventListener('beforeunload',e=>{if(d){e.preventDefault();e.returnValue=''}});
+f.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter')f.requestSubmit()})}
+</script></body></html>
