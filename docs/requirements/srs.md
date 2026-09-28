@@ -70,20 +70,6 @@ El sistema maneja datos personales identificables tanto de tutores de mascotas c
 * [Historias de Usuario + Casos de uso](slices.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.
 ---
 ## Atributos de calidad
-**Taxonomía utilizada:** ISO/IEC 25010:2023. Cada escenario indica la subcaracterística que pone a prueba y se documenta con los seis componentes (estímulo, fuente, artefacto, entorno, respuesta, medida). Los escenarios nacen del mismo proceso de elicitación que el SRS y quedan como insumo para las decisiones de arquitectura; la trazabilidad hacia el SRS figura en cada escenario.
----
-## 1. Atributos elegidos y justificación
 
-| # | Atributo (subcaracterística) | Característica ISO/IEC 25010:2023 | Significado | Escenarios |
-|---|---|---|---|---|
-| 1 | **Operabilidad** | Capacidad de interacción | El sistema es fácil de operar y controlar | 1.1 |
-| 2 | **Integridad** | Seguridad de la información | Se impide la modificación no autorizada de datos y del sistema | 2.1 |
-| 3 | **Capacidad de recuperación** | Fiabilidad | El sistema se recupera de una falla, restablece el servicio y restaura los datos afectados | 3.1 |
-| 4 | **Responsabilidad (accountability)** | Seguridad de la información | Las acciones de cada entidad pueden rastrearse hasta ella | 4.1 · 4.2 |
-| 5 | **Modificabilidad** | Mantenibilidad | Se puede modificar el sistema sin introducir defectos ni degradar la calidad | 5.1 · 5.2 |
-
-### Justificación de Elección
-
-- **Operabilidad:** hay tres perfiles con contextos muy distintos. El más exigente es el veterinario, que registra datos en plena atención. Si registrar es lento, el dato se carga tarde o de memoria, y la historia clínica pierde calidad.
 -**Integridad:** la historia clínica es el activo central del sistema. Un dato clínico alterado por alguien sin el rol adecuado puede llevar a una decisión médica errónea. Además, RF-08 limita la edición de entradas previas al veterinario, y esa restricción tiene que valer en el servidor y no solo en la interfaz.
 - **Capacidad de recuperación:** una consulta no se puede volver a hacer, y la clínica no tiene un sistema alternativo. Perder o dejar corrupta la base de datos es la falla más costosa, y con infraestructura modesta es una falla esperable, no una rareza.
