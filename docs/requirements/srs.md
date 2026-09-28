@@ -71,5 +71,3 @@ El sistema maneja datos personales identificables tanto de tutores de mascotas c
 ---
 ## Atributos de calidad
 
--**Integridad:** la historia clínica es el activo central del sistema. Un dato clínico alterado por alguien sin el rol adecuado puede llevar a una decisión médica errónea. Además, RF-08 limita la edición de entradas previas al veterinario, y esa restricción tiene que valer en el servidor y no solo en la interfaz.
-- **Capacidad de recuperación:** una consulta no se puede volver a hacer, y la clínica no tiene un sistema alternativo. Perder o dejar corrupta la base de datos es la falla más costosa, y con infraestructura modesta es una falla esperable, no una rareza.
