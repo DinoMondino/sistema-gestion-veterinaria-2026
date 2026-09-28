@@ -24,6 +24,29 @@
 
 *RF-12:* El sistema debe permitir generar gráficos o reportes tabulares de la evolución cronológica del peso del paciente a partir de los datos históricos almacenados.
 
+# Atributos de calidad
+
+## Atributos Elegidos y justificación:
+
+Operabilidad, (Capacidad de interacción):"El sistema es fácil de operar y controlar"
+hay tres perfiles con contextos muy distintos. El más exigente es el veterinario, que registra datos en plena atención, muchas veces con las manos ocupadas y sin tiempo para navegar menús. Si registrar es lento, el dato se carga tarde o de memoria, y la historia clínica pierde calidad.
+
+Integridad,(Seguridad de la Información): "Se impide la modificación no autorizada de datos y del sistema"
+la historia clínica es el activo central del sistema. Un dato clínico alterado por alguien sin el rol adecuado puede llevar a una decisión médica errónea. Además, RF-08 limita la edición de entradas previas al veterinario, y esa restricción tiene que valer en el servidor y no solo en la interfaz.
+
+Capacidad de Recuperación, (Fiabilidad) "El sistema se recupera de una falla, restablece el servicio y restaura los datos afectados"
+una consulta no se puede volver a hacer, y la clínica no tiene un sistema alternativo. Perder o dejar corrupta la base de datos es la falla más costosa, y con infraestructura modesta es una falla esperable, no una rareza.
+
+Responsabilidad, (Seguridad de la información): "Las acciones de cada entidad pueden rastrearse hasta ella"
+las entradas clínicas tienen valor profesional y pueden corregirse (RF-08). En una clínica pequeña es habitual compartir equipos y sesiones, así que sin atribución individual no se puede saber quién registró o cambió qué.
+
+Modificabilidad, (Mantenibilidad): "Se puede modificar el sistema sin introducir defectos ni degradar la calidad"
+el proyecto es incremental y el SRS declara que los requerimientos evolucionan; además depende de OMIA, un servicio externo que el equipo no controla. Que cada cambio quede acotado es lo que hace viable el ciclo de vida elegido
+
 ---
 ## Slices: Historias de usuario + Casos de uso
 * [Historias de Usuario + Casos de uso](slices.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.
+
+---
+## Escenarios de los atributos de calidad
+* [Escenarios](quality-scenarios.md)
