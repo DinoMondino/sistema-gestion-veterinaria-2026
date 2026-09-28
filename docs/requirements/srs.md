@@ -63,11 +63,11 @@ El sistema maneja datos personales identificables tanto de tutores de mascotas c
 > Quedó deliberadamente fuera de esta primera versión un cuarto perfil de "administrador de la clínica" independiente del veterinario — se decidió fusionar ese rol con el de veterinario/a para no multiplicar roles antes de validar los tres principales.
 
 ---
-## Lista de requerimientos funcionales
+## Lista de requerimientos funcionales y atributos de calidad
 * [Requerimientos funcionales](RF.md): Proceso Seleccionado: Gestión Clínica e Historial
 ---
 ## Slices: Historias de usuario + Casos de uso
 * [Historias de Usuario + Casos de uso](slices.md): Requerimientos funcionales centrados en el valor de los usuarios del proceso elegido.
 ---
-## Atributos de calidad
-
+## Escenarios de los atributos de calidad
+ [Escenarios de atributos de calidad](quality-scenarios.md)
