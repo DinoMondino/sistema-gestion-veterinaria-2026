@@ -1,0 +1,7 @@
+{% macro campo(k, label, tipo='text', ayuda='') %}
+<div class="campo"><label for="{{ k }}">{{ label }}</label>
+{% if tipo == 'area' %}<textarea id="{{ k }}" name="{{ k }}" rows="3" class="{{ 'invalid' if errores.get(k) }}">{{ v.get(k, '') }}</textarea>
+{% else %}<input id="{{ k }}" name="{{ k }}" type="{{ tipo }}" value="{{ v.get(k, '') }}" class="{{ 'invalid' if errores.get(k) }}"{% if tipo == 'number' %} step="0.1" inputmode="decimal"{% endif %}{% if k in ('fecha','vigencia') %} {{ 'max' if k == 'fecha' else 'min' }}="{{ hoy }}"{% endif %}>{% endif %}
+{% if ayuda %}<small>{{ ayuda }}</small>{% endif %}
+{% if errores.get(k) %}<span class="msg">⚠ {{ errores[k] }}</span>{% endif %}</div>
+{% endmacro %}

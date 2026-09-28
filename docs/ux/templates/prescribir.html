@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% from "_campos.html" import campo with context %}{% block title %}Prescribir medicación{% endblock %}
+{% block crumbs %}Pacientes › {{ p.nombre }} › Historial clínico › <b>Prescribir medicación</b>{% endblock %}
+{% block body %}<h1>Prescribir medicación o suplemento</h1>
+<div class="card"><strong>Plan de tratamiento actual:</strong> {{ p.activos|join(' · ') or 'sin medicación activa' }}</div>
+<form method="post" class="editable card" novalidate>
+{% if alerta %}<div class="alert warn" role="alertdialog" aria-labelledby="at"><h2 id="at">⚠ Posible interacción con {{ alerta[0] }}</h2><p>{{ alerta[1] }}</p>
+ <label for="justificacion">Justificación clínica (necesaria para continuar)</label>
+ <textarea id="justificacion" name="justificacion" rows="2" class="{{ 'invalid' if errores.get('justificacion') }}">{{ v.get('justificacion', '') }}</textarea>
+ {% if errores.get('justificacion') %}<span class="msg">⚠ {{ errores.justificacion }}</span>{% endif %}
+ <div class="acciones"><button class="btn danger" name="accion" value="continuar">Continuar bajo mi responsabilidad</button>
+ <button class="btn ghost" name="accion" value="cancelar" formnovalidate>Cancelar prescripción</button></div></div>{% endif %}
+<div class="campo"><label for="tipo">Tipo</label><select id="tipo" name="tipo"><option>Medicación</option><option {{ 'selected' if v.get('tipo') == 'Suplementación' }}>Suplementación</option></select></div>
+<div class="grid">{{ campo('farmaco', 'Fármaco o suplemento *', 'text', 'Ej.: Meloxicam (probá con este para ver la alerta)') }}{{ campo('dosis', 'Dosis *', 'text', 'Ej.: 1 mg cada 24 h') }}</div>
+{{ campo('indicaciones', 'Indicaciones', 'area') }}{{ campo('vigencia', 'Vigente hasta', 'date') }}
+<div class="acciones">{% if not alerta %}<button class="btn" name="accion" value="registrar">Registrar prescripción</button>
+<a class="btn ghost" href="{{ url_for('historial', pid=pid) }}">Cancelar</a>{% endif %}</div>
+</form>{% endblock %}
