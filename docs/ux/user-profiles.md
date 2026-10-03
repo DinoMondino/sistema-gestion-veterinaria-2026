@@ -12,16 +12,36 @@ Antes de generar el código HTML/CSS, definimos las decisiones tecnológicas y d
 
 ---
 
-### 2\. Perfiles de Usuario (User Personas del TP1)
+## Perfil de usuario
 
-Apoyados directamente en los roles definidos en el `srs.md` del TP1:
+### Médico Veterinario
 
-#### Perfil 1: Médico Veterinario (Actor Principal de las HU del TP1)
+**Quién es:**
+El médico veterinario es el actor principal de los casos de uso trabajados en esta Parte B. Es responsable de registrar y editar información de las historias clínicas, consultar la evolución clínica de los pacientes y gestionar tratamientos y prescripciones.
 
-* **Quién es:** Profesional de la salud animal responsable del diagnóstico, tratamiento y evolución de los pacientes.
-* **Objetivo con el sistema:** Registrar la atención médica, consultar historiales, actualizar pesos/vacunas y prescribir medicación con la mayor rapidez y precisión posible.
-* **Contexto de uso:** Consultorio o sala de examinación clínica, frente a la computadora o tablet. 
-* **Frustraciones:** Perder datos ingresados por errores de validación o no enterarse a tiempo de incompatibilidades medicamentosas.
+**Objetivo con el sistema:**
+Registrar y consultar información clínica de los pacientes, mantener actualizado el historial clínico y gestionar tratamientos y prescripciones, incluyendo la detección de posibles interacciones medicamentosas.
+
+**Contexto de uso:**
+El sistema se utiliza como una aplicación web dentro del contexto de gestión clínica veterinaria. El TP1 establece que el médico veterinario interactúa directamente con el sistema para registrar atenciones, consultar historiales, editar entradas y gestionar tratamientos.
+
+**Nivel de conocimiento técnico:**
+El TP1 no especifica un nivel de conocimiento técnico del usuario. Por este motivo, no se incorpora una caracterización adicional del nivel técnico en este perfil.
+
+**Limitaciones o frustraciones consideradas:**
+El TP1 no define limitaciones personales, condiciones físicas ni frustraciones específicas del médico veterinario. Por lo tanto, no se incorporan características adicionales que no puedan justificarse a partir de la documentación del proyecto.
+
+### Criterios de diseño derivados del perfil
+
+A partir de las tareas establecidas en las historias de usuario, la interfaz debe priorizar:
+
+* Presentar claramente el estado de las operaciones realizadas.
+* Utilizar terminología relacionada con la gestión clínica veterinaria.
+* Evitar errores mediante validaciones antes de almacenar información.
+* Mostrar mensajes de error específicos y comprensibles.
+* Permitir cancelar o corregir una operación cuando corresponda.
+* Mantener visibles los datos relevantes del paciente durante las tareas clínicas.
+* Mantener una estructura consistente entre las diferentes pantallas.
 
 
 ---
