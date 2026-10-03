@@ -634,15 +634,15 @@ footer.footer {
           {% endif %}
         </div>
         <div>
-          <div class="patient-name">🐾 {{ p.nombre }}</div>
+          <div class="patient-name"> {{ p.nombre }}</div>
           <div class="patient-subtitle">{{ p.especie }} · {{ p.raza }} · Nacimiento: {{ p.nac }}</div>
         </div>
       </div>
 
       <div class="patient-pills-row">
         <span class="info-pill">Tutor/a: <strong>{{ p.tutor }}</strong></span>
-        <span class="info-pill weight-highlight">⚖️ Último peso: {{ p.peso }} kg</span>
-        <span class="info-pill">💊 Tratamientos: <strong>{{ p.activos|join(', ') or 'Ninguno' }}</strong></span>
+        <span class="info-pill weight-highlight"> Último peso: {{ p.peso }} kg</span>
+        <span class="info-pill"> Tratamientos: <strong>{{ p.activos|join(', ') or 'Ninguno' }}</strong></span>
       </div>
     </div>
   </section>
@@ -666,7 +666,7 @@ footer.footer {
 
   <footer class="footer">
     <p><strong>VetGestión</strong> · Sistema de Gestión Clínica Veterinaria (Maquetado TP2)</p>
-    <p style="margin-top:0.25rem;"><small>💡 Atajo de teclado: Presioná <strong>Ctrl + Enter</strong> en cualquier formulario para guardar automáticamente.</small></p>
+    <p style="margin-top:0.25rem;"><small> Atajo de teclado: Presioná <strong>Ctrl + Enter</strong> en cualquier formulario para guardar automáticamente.</small></p>
   </footer>
 
   <script>
