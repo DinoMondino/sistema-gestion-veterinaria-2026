@@ -20,9 +20,8 @@ Apoyados directamente en los roles definidos en el `srs.md` del TP1:
 
 * **Quién es:** Profesional de la salud animal responsable del diagnóstico, tratamiento y evolución de los pacientes.
 * **Objetivo con el sistema:** Registrar la atención médica, consultar historiales, actualizar pesos/vacunas y prescribir medicación con la mayor rapidez y precisión posible.
-* **Contexto de uso:** Consultorio o sala de examinación clínica, frente a la computadora o tablet. Atiende pacientes (muchas veces agitados o en urgencia) con las manos ocupadas, interrupciones frecuentes y alto nivel de exigencia temporal.
-* **Nivel técnico:** Medio/Básico en software.
-* **Frustraciones:** Perder tiempo navegando menús complejos, perder datos ingresados por errores de validación o no enterarse a tiempo de incompatibilidades medicamentosas.
+* **Contexto de uso:** Consultorio o sala de examinación clínica, frente a la computadora o tablet. 
+* **Frustraciones:** Perder datos ingresados por errores de validación o no enterarse a tiempo de incompatibilidades medicamentosas.
 
 
 ---
