@@ -2,11 +2,30 @@
 <div class="form-field">
   <label for="{{ k }}" class="field-label">{{ label }}</label>
   {% if tipo == 'area' %}
-    <textarea id="{{ k }}" name="{{ k }}" rows="3" class="field-control {{ 'invalid' if errores.get(k) }}">{{ v.get(k, '') }}</textarea>
+    <textarea
+      id="{{ k }}"
+      name="{{ k }}"
+      rows="3"
+      class="field-control {{ 'invalid' if errores.get(k) }}"
+      {% if '*' in label %}required{% endif %}
+    >{{ v.get(k, '') }}</textarea>
   {% else %}
-    <input id="{{ k }}" name="{{ k }}" type="{{ tipo }}" value="{{ v.get(k, '') }}" class="field-control {{ 'invalid' if errores.get(k) }}"
-           {% if tipo == 'number' %} step="0.1" inputmode="decimal" {% endif %}
-           {% if k in ('fecha', 'vigencia') %} {{ 'max' if k == 'fecha' else 'min' }}="{{ hoy }}" {% endif %}>
+    <input
+      id="{{ k }}"
+      name="{{ k }}"
+      type="{{ tipo }}"
+      value="{{ v.get(k, '') }}"
+      class="field-control {{ 'invalid' if errores.get(k) }}"
+      {% if '*' in label %}required{% endif %}
+      {% if tipo == 'number' %}
+        step="0.1"
+        min="0.1"
+        inputmode="decimal"
+      {% endif %}
+      {% if k in ('fecha', 'vigencia') %}
+        {{ 'max' if k == 'fecha' else 'min' }}="{{ hoy }}"
+      {% endif %}
+    >
   {% endif %}
   {% if ayuda %}<span class="field-help">{{ ayuda }}</span>{% endif %}
   {% if errores.get(k) %}<span class="field-error" id="{{ k }}-error" role="alert"> {{ errores[k] }}</span>{% endif %}
