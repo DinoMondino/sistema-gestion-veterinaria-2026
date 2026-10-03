@@ -24,21 +24,6 @@ Apoyados directamente en los roles definidos en el `srs.md` del TP1:
 * **Nivel técnico:** Medio/Básico en software.
 * **Frustraciones:** Perder tiempo navegando menús complejos, perder datos ingresados por errores de validación o no enterarse a tiempo de incompatibilidades medicamentosas.
 
-#### Perfil 2: Asistente / Recepcionista
-
-* **Quién es:** Personal administrativo en la entrada de la clínica.
-* **Objetivo con el sistema:** Dar de alta tutores/mascotas, buscar pacientes registrados, asignar turnos y derivar al paciente a la sala de espera/consulta.
-* **Contexto de uso:** Recepción, computadora de escritorio fija, atención presencial y telefónica en simultáneo.
-* **Nivel técnico:** Medio en herramientas de oficina y planillas.
-* **Frustraciones:** Dificultad para encontrar rápidamente la ficha de un paciente o demoras en la atención inicial.
-
-#### Perfil 3: Dueño de Mascota / Tutor (Cliente)
-
-* **Quién es:** Propietario o responsable de la mascota.
-* **Objetivo con el sistema:** Consultar el carnet de vacunas, próximos turnos e historial de pagos.
-* **Contexto de uso:** Dispositivo móvil o navegador web doméstico.
-* **Nivel técnico:** Variable (de bajo a medio).
-* **Frustraciones:** Lenguaje médico incomprensible, falta de claridad en fechas de vacunación o cobros.
 
 ---
 
