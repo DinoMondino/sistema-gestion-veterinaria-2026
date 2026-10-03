@@ -25,7 +25,7 @@
 </div>
 
 <details class="surface-card" style="padding:1rem 1.25rem; margin-bottom:1.5rem; background:#f0fdf4; border-color:#bbf7d0;">
-  <summary style="font-weight:700; color:#166534; cursor:pointer;">ℹ️ Información sobre la gestión de entradas clínicas (RF-08)</summary>
+  <summary style="font-weight:700; color:#166534; cursor:pointer;"> Información sobre la gestión de entradas clínicas (RF-08)</summary>
   <p style="font-size:0.875rem; color:#14532d; margin-top:0.5rem; line-height:1.5;">
     Las consultas figuran en orden cronológico inverso. Por seguridad e integridad médica (RF-08), <strong>solamente el profesional autor de la consulta</strong> puede editar sus observaciones. Cualquier cambio realizado quedará marcado con la etiqueta <span class="entry-badge-modified">✎ Modificada</span>.
   </p>
@@ -35,25 +35,25 @@
   <article class="entry-card">
     <header class="entry-header">
       <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-        <span class="entry-date">📅 {{ e.fecha }}</span>
-        <span style="font-size:0.85rem; font-weight:600; color:#475569; background:#f1f5f9; padding:0.25rem 0.75rem; border-radius:99px;">👨‍⚕️ {{ e.autor }}</span>
-        {% if e.editada %}<span class="entry-badge-modified">✎ Modificada</span>{% endif %}
+        <span class="entry-date"> {{ e.fecha }}</span>
+        <span style="font-size:0.85rem; font-weight:600; color:#475569; background:#f1f5f9; padding:0.25rem 0.75rem; border-radius:99px;"> {{ e.autor }}</span>
+        {% if e.editada %}<span class="entry-badge-modified"> Modificada</span>{% endif %}
       </div>
-      <div class="info-pill weight-highlight">⚖️ {{ e.peso }} kg</div>
+      <div class="info-pill weight-highlight"> {{ e.peso }} kg</div>
     </header>
 
     <div class="entry-details-grid">
-      <div class="entry-label">🩺 Síntomas:</div>
+      <div class="entry-label"> Síntomas:</div>
       <div class="entry-value" style="font-weight:500;">{{ e.sintomas }}</div>
 
-      <div class="entry-label">🔬 Diagnóstico Preliminar:</div>
+      <div class="entry-label"> Diagnóstico Preliminar:</div>
       <div class="entry-value" style="font-weight:700; color:#065f46;">{{ e.dx }}</div>
 
-      <div class="entry-label">📝 Observaciones:</div>
+      <div class="entry-label"> Observaciones:</div>
       <div class="entry-value" style="font-style:italic; background:#f8fafc; padding:0.75rem; border-radius:8px; border:1px solid #e2e8f0;">{{ e.obs or 'Sin observaciones registradas.' }}</div>
 
       {% if e.extra %}
-        <div class="entry-label">💉 Datos Sanitarios / Extras:</div>
+        <div class="entry-label"> Datos Sanitarios / Extras:</div>
         <div class="entry-value">
           <ul style="padding-left:1.2rem; font-size:0.875rem; color:#334155;">
             {% for x in e.extra %}<li>{{ x }}</li>{% endfor %}
@@ -64,9 +64,9 @@
 
     <div style="padding-top:0.75rem; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end;">
       {% if e.autor == vet %}
-        <a class="btn btn-sec btn-sm" href="{{ url_for('editar', pid=pid, eid=e.id) }}">✎ Editar esta Entrada</a>
+        <a class="btn btn-sec btn-sm" href="{{ url_for('editar', pid=pid, eid=e.id) }}"> Editar esta Entrada</a>
       {% else %}
-        <span style="font-size:0.8rem; font-weight:600; color:#94a3b8; background:#f8fafc; padding:0.35rem 0.75rem; border-radius:6px;">🔒 Solo su autor/a puede editar esta entrada (RF-08)</span>
+        <span style="font-size:0.8rem; font-weight:600; color:#94a3b8; background:#f8fafc; padding:0.35rem 0.75rem; border-radius:6px;"> Solo su autor/a puede editar esta entrada (RF-08)</span>
       {% endif %}
     </div>
   </article>
