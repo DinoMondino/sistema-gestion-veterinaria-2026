@@ -63,27 +63,47 @@ Revisando el alcance del TP1 (`slices.md`), las Historias de Usuario desarrollad
 
 ### 4\. Escenarios de Uso y Flujos de Navegación
 
-#### Escenario A (para HU-01 - Validación de Errores)
+### Escenario A — HU-01: Datos obligatorios incompletos o con formato inválido
 
-* **Narración del escenario:** El Dr. Veterinario está registrando de prisa una consulta de urgencia para el paciente "Firmeza". Al presionar "Guardar Consulta", olvidó ingresar la fecha y cargó un valor negativo (-2.5 kg) en el campo de peso. El sistema debe rechazar el envío sin limpiar la pantalla, resaltar visualmente en rojo los campos con error y mostrar un mensaje preciso.
-* **Flujo de Navegación:**
-  1. *Pantalla 1 (Ingreso de datos):* Formulario de Registro de Atención Clínica (`CU-01`).
-  2. *Acción:* Clic en "Guardar Consulta".
-  3. *Pantalla 1 (Estado con Error - HU-01):* Misma pantalla con campos resaltados en rojo, banderas de error bajo los insumos inválidos y banner superior descriptivo.
+El médico veterinario se encuentra registrando una nueva consulta clínica para el paciente Luna. Durante la carga de los datos, deja un campo obligatorio incompleto e ingresa un valor inválido en otro campo. Al seleccionar la opción de guardar la consulta, el sistema debe validar la información, impedir el almacenamiento del registro y señalar los campos que presentan errores, indicando el motivo de cada uno.
+
+**Flujo de navegación:**
+
+Pantalla: Nueva consulta
+        ↓
+        Completa datos
+        ↓
+        Intenta guardar
+        ↓
+Pantalla: Nueva consulta con errores de validación
+        ↓
+        Corrige los datos
+        ↓
+        Guarda correctamente
 
 #### Escenario B (para HU-02 - Edición de Historial)
 
-* **Narración del escenario:** El Dr. Veterinario revisa el historial clínico de "Firmeza" y advierte que en la consulta de la semana pasada cometió un error de tipeo en las observaciones del diagnóstico. Hace clic en "Editar Registro", corrige la observación y guarda. El sistema actualiza el registro y muestra la etiqueta "Editado por profesional" con fecha y hora.
+* **Narración del escenario:** El médico veterinario consulta el historial clínico de un paciente y selecciona una entrada previa que necesita ser corregida. Edita la información correspondiente, registra la justificación del cambio y confirma la modificación.
 * **Flujo de Navegación:**
-  1. *Pantalla 2 (Consulta):* Vista Consolidada del Historial Clínico (`CU-02`).
-  2. *Acción:* Clic en el botón "Editar" en la entrada previa.
-  3. *Pantalla 2 (Panel/Modal de Edición - HU-02):* Despliegue de formulario de edición con justificación de cambio.
-  4. *Pantalla 2 (Resultado):* Vista del historial actualizado con badge visual de auditoría.
-
+  Pantalla 1: Historial clínico
+        ↓
+        Selecciona una entrada existente
+        ↓
+Pantalla 2: Editar entrada del historial
+        ↓
+        Modifica los datos y registra la justificación
+        ↓
+        Confirma la edición
+        ↓
+Pantalla 3: Historial clínico actualizado
 #### Escenario C (para HU-03 - Alerta de Interacción Medicamentosa)
 
-* **Narración del escenario:** Durante la consulta clínica, el veterinario decide agregar un AINE (antiinflamatorio) al tratamiento del paciente. El sistema detecta que el paciente ya tiene activo un tratamiento con corticoides. Al intentar confirmar la prescripción, el sistema interrumpe la acción desplegando un modal de advertencia crítica detallando el riesgo clínico e interacciones, solicitando justificar o cancelar.
+* **Narración del escenario:** El médico veterinario se encuentra gestionando el tratamiento del paciente Luna y selecciona un nuevo medicamento para incorporarlo al tratamiento. El sistema detecta que existe una posible interacción con una medicación que el paciente ya tiene registrada. Antes de completar la prescripción, el sistema debe informar la interacción detectada y solicitar una decisión al veterinario.
 * **Flujo de Navegación:**
-  1. *Pantalla 3 (Prescripción):* Módulo de Tratamientos y Prescripción de Medicación (`CU-03`).
-  2. *Acción:* Selección del fármaco en conflicto y clic en "Agregar Tratamiento".
-  3. *Pantalla 3 (Modal de Alerta - HU-03):* Superposición de modal crítico con detalles de interacción medicamentosa y opciones de "Cancelar" o "Confirmar con Justificación".</dialog></mark></fieldset></nav></header></article></section></main>
+  Pantalla: Prescripción / tratamiento
+        ↓
+        Selecciona medicamento
+        ↓
+Pantalla: Prescripción con alerta de interacción
+        ↓
+        Cancela o continúa
