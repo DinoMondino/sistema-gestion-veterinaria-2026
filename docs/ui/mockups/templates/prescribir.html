@@ -20,36 +20,78 @@
   <div style="font-weight:800; color:#047857; font-size:1.1rem;">{{ p.activos|join(' · ') or 'Sin medicación activa registrada actualmente.' }}</div>
 </div>
 
-{% if alerta %}
-  <div class="drug-interaction-card" role="alertdialog" aria-labelledby="alert-title">
-    <div id="alert-title" class="interaction-header">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>ALERTA CRÍTICA: Incompatibilidad Medicamentosa Detectada</span>
-    </div>
+<form method="post" class="editable surface-card" novalidate id="prescripcion-form">
 
-    <div class="interaction-body">
-      <p style="font-size:0.95rem; font-weight:700; color:#9a3412; margin-bottom:0.35rem;">
-        Conflicto detectado con el tratamiento activo: <mark style="background:#fed7aa; padding:0.1rem 0.5rem; border-radius:4px; font-weight:800; color:#7c2d12;">{{ alerta[0] }}</mark>
-      </p>
-      <p style="font-size:0.875rem; color:#c2410c; line-height:1.5;">
-        <strong>Efecto clínico adverso:</strong> {{ alerta[1] }}
-      </p>
-    </div>
+  {% if alerta %}
+    <div class="drug-interaction-card" role="alert" aria-labelledby="alert-title">
+      <div id="alert-title" class="interaction-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>ALERTA CRÍTICA: Incompatibilidad Medicamentosa Detectada</span>
+      </div>
 
-    <div class="form-field" style="margin-bottom:1.25rem;">
-      <label for="justificacion" class="field-label" style="color:#7c2d12; font-weight:700;"> Justificación Clínica Profesional (Requerida para autorizar):</label>
-      <textarea id="justificacion" name="justificacion" rows="3" class="field-control {{ 'invalid' if errores.get('justificacion') }}" placeholder="Escribí la razón clínica por la cual considerás necesario prescribir este fármaco a pesar del riesgo...">{{ v.get('justificacion', '') }}</textarea>
-      {% if errores.get('justificacion') %}<span class="field-error"> {{ errores.justificacion }}</span>{% endif %}
-    </div>
+      <div class="interaction-body">
+        <p style="font-size:0.95rem; font-weight:700; color:#9a3412; margin-bottom:0.35rem;">
+          Conflicto detectado con el tratamiento activo:
+          <mark style="background:#fed7aa; padding:0.1rem 0.5rem; border-radius:4px; font-weight:800; color:#7c2d12;">
+            {{ alerta[0] }}
+          </mark>
+        </p>
 
-    <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-      <button class="btn btn-danger" name="accion" value="continuar" type="submit"> Continuar Bajo Mi Responsabilidad Profesional</button>
-      <button class="btn btn-sec" name="accion" value="cancelar" type="submit" formnovalidate> Cancelar Prescripción</button>
-    </div>
-  </div>
-{% endif %}
+        <p style="font-size:0.875rem; color:#c2410c; line-height:1.5;">
+          <strong>Efecto clínico adverso:</strong> {{ alerta[1] }}
+        </p>
+      </div>
 
-<form method="post" class="editable surface-card" novalidate>
+      <div class="form-field" style="margin-bottom:1.25rem;">
+        <label for="justificacion" class="field-label" style="color:#7c2d12; font-weight:700;">
+          Justificación Clínica Profesional (Requerida para autorizar):
+        </label>
+
+        <textarea
+          id="justificacion"
+          name="justificacion"
+          rows="3"
+          class="field-control {{ 'invalid' if errores.get('justificacion') }}"
+          aria-required="true"
+          {% if errores.get('justificacion') %}aria-describedby="justificacion-error"{% endif %}
+          required
+          placeholder="Escribí la razón clínica por la cual considerás necesario prescribir este fármaco a pesar del riesgo..."
+        >{{ v.get('justificacion', '') }}</textarea>
+
+        {% if errores.get('justificacion') %}
+          <span class="field-error" id="justificacion-error" role="alert">
+            {{ errores.justificacion }}
+          </span>
+        {% endif %}
+      </div>
+
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <button
+          class="btn btn-danger"
+          name="accion"
+          value="continuar"
+          type="submit"
+        >
+          Continuar Bajo Mi Responsabilidad Profesional
+        </button>
+
+        <button
+          class="btn btn-sec"
+          name="accion"
+          value="cancelar"
+          type="submit"
+          formnovalidate
+        >
+          Cancelar Prescripción
+        </button>
+      </div>
+    </div>
+  {% endif %}
+  
   <div class="form-field">
     <label for="tipo" class="field-label">Tipo de Prescripción</label>
     <select id="tipo" name="tipo" class="field-control">
