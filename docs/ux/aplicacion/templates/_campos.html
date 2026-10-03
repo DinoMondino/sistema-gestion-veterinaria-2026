@@ -9,6 +9,6 @@
            {% if k in ('fecha', 'vigencia') %} {{ 'max' if k == 'fecha' else 'min' }}="{{ hoy }}" {% endif %}>
   {% endif %}
   {% if ayuda %}<span class="field-help">{{ ayuda }}</span>{% endif %}
-  {% if errores.get(k) %}<span class="field-error" id="{{ k }}-error" role="alert">⚠️ {{ errores[k] }}</span>{% endif %}
+  {% if errores.get(k) %}<span class="field-error" id="{{ k }}-error" role="alert"> {{ errores[k] }}</span>{% endif %}
 </div>
 {% endmacro %}
