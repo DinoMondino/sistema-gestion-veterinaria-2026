@@ -201,10 +201,7 @@ Los siguientes cinco escenarios seleccionados en el TP2 condicionan estructuralm
 
 #### Estilos Adicionales Integrados:
 1. **Repositorio (Repository Pattern):** La Base de Datos Relacional actúa como almacén central inmutable para historias clínicas, consultas y logs de auditoría (EC-03, EC-04).
-2. **Tuberías y Filtros (Pipe and Filter / Middleware):** El contenedor Backend organiza la atención de peticiones en una secuencia de filtros ordenados (Autenticación $
-$rightarrow$ Autorización RBAC $
-$rightarrow$ Validación DTO $
-$rightarrow$ Servicio de Dominio).
+2. **Tuberías y Filtros (Pipe and Filter / Middleware):** El contenedor Backend organiza la atención de peticiones en una secuencia de filtros ordenados (Autenticación --> Autorización RBAC --> Validación DTO --> Servicio de Dominio).
 
 ---
 
