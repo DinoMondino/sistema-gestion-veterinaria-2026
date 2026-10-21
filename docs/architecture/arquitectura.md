@@ -24,24 +24,7 @@ Este documento está diseñado para los siguientes roles organizacionales y téc
 - **Evaluadores y Docentes:** Para auditar el proceso de derivación desde los atributos de calidad hasta los diagramas C4 y decisiones de arquitectura.
 
 ### 1.4 Siglas y Acrónimos
-- **ACID:** Atomicidad, Consistencia, Aislamiento y Durabilidad (Atomicity, Consistency, Isolation, Durability).
-- **ADR / DA:** Record de Decisión de Arquitectura / Decisión de Arquitectura (Architecture Decision Record).
-- **API:** Interfaz de Programación de Aplicaciones (Application Programming Interface).
-- **C4:** Modelo de arquitectura *Context, Containers, Components, Code*.
-- **DTO:** Objeto de Transferencia de Datos (Data Transfer Object).
-- **EC:** Escenario de Calidad.
-- **HU:** Historia de Usuario.
-- **JSON:** Notación de Objetos de JavaScript (JavaScript Object Notation).
-- **JWT:** JSON Web Token.
-- **OMIA:** Catálogo de enfermedades hereditarias, solo consulta opcional.
-- **ORM:** Mapeo Objeto-Relacional (Object-Relational Mapping).
-- **PITR:** Recuperación a un Punto en el Tiempo (Point-In-Time Recovery).
-- **RBAC:** Control de Acceso Basado en Roles (Role-Based Access Control).
-- **REST:** Transferencia de Estado Representacional (Representational State Transfer).
-- **RPO:** Objetivo de Punto de Recuperación (Recovery Point Objective).
-- **RTO:** Objetivo de Tiempo de Recuperación (Recovery Time Objective).
-- **SPA:** Aplicación de Página Única (Single Page Application).
-- **WAL:** Registro de Escritura Adelantada (Write-Ahead Logging).
+Las siglas se aclaran la primera vez que se usan y se reúnen en el glosario (sección 11). Las principales: **TP** (trabajo práctico), **RF** (requerimiento funcional), **CU** (caso de uso), **HU** (historia de usuario), **EC** (escenario de calidad), **DA** (decisión de arquitectura), **DFD** (diagrama de flujo de datos), **C4** (modelo de documentación en cuatro niveles: contexto, contenedores, componentes y código), **OMIA** (*Online Mendelian Inheritance in Animals*: catálogo de rasgos y enfermedades hereditarias en animales).
 
 ---
 
