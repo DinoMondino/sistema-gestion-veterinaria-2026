@@ -53,11 +53,11 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 - **R3 (Sistemas Externos):** La consulta de interacciones medicamentosas debe integrarse obligatoriamente con la API REST externa de OMIA vía HTTPS/JSON.
 
 ### 2.2 Restricciones del Equipo y Tecnología
-- **R4 (Tamaño y Experiencia del Equipo):** Proyecto desarrollado por un equipo reducido (3 a 4 integrantes) con alta familiaridad en arquitecturas web tradicionales (Cliente-Servidor / Capas) y tiempo acotado.
+- **R4 (Tamaño y Experiencia del Equipo):** Proyecto desarrollado por un equipo reducido (3 integrantes) con alta familiaridad en arquitecturas web tradicionales (Cliente-Servidor / Capas) y tiempo acotado.
 - **R5 (Simplicidad Operativa):** Se descartan soluciones con alta sobrecarga de configuración o indirección excessive (como microservicios o patrones de indirección compleja) para evitar sobreingeniería y garantizar la mantenibilidad del código.
 
 ### 2.3 Restricciones de Tiempo y Entorno
-- **R6 (Ciclo de Entrega):** La arquitectura debe completarse y ser demostrable dentro del plazo del cuatrimestre universitario.
+- **R6 (Ciclo de Entrega):** La arquitectura debe completarse y ser demostrable dentro del plazo del cuatrimestre.
 - **R7 (Entorno de Despliegue):** El despliegue inicial se realiza en un servidor único o contenedorizado con Docker, sin infraestructura distribuida multi-región.
 
 ---
