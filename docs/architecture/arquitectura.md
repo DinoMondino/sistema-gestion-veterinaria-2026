@@ -55,47 +55,68 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 
 ## 3. Contexto
 
-El sistema interactúa con tres actores humanos principales y un sistema externo de referencia médica.
+E### 3.1 Diagrama de contexto del TP1 (DFD Nivel 0)
 
-### 3.1 Diagrama de Contexto (C4 - Nivel 1)
+Se reproduce sin cambios el diagrama de `docs/architecture/diagrama-de-contexto-dfd.md`:
+
+```mermaid
+flowchart LR
+    subgraph Izquierda [Actores de Gestión y Atención]
+        SEC[Secretario/a o Recepcionista]
+        VET[Médico/a Veterinario/a]
+    end
+
+    P((0 <br/> Gestionar Clínica <br/> Veterinaria))
+
+    subgraph Derecha [Actores Externos y Clientes]
+        DUE[Tutor/a de Mascota]
+        OMIA[Base de Datos Externa OMIA]
+    end
+
+    SEC ==>|Registra turnos, pagos, <br/> datos de tutores y mascotas| P
+    P ==>|Confirma turnos <br/> y entrega comprobantes| SEC
+
+    VET ==>|Registra consultas, <br/> diagnósticos y vacunas| P
+    P ==>|Provee historia clínica <br/> y calendario de vacunación| VET
+
+    DUE ==>|Solicita turnos <br/> y consulta historial| P
+    P ==>|Envía recordatorios, historias <br/> clínicas y comprobantes| DUE
+
+    P ==>|Consulta patología <br/> y código genético| OMIA
+    OMIA ==>|Devuelve información <br/> de referencia| P
+```
+
+### 3.2 El mismo contexto en notación C4 (nivel 1)
+
+Mismos actores y mismo sistema externo, con los mismos nombres:
 
 ```mermaid
 C4Context
-    title Diagrama de Contexto del Sistema VetGestión (C4 - Nivel 1)
-
-    Person(vet, "Médico/a Veterinario/a", "Profesional clínico que registra atenciones, consulta historiales, edita observaciones y prescribe medicamentos.")
-    Person(sec, "Asistente / Recepcionista", "Personal administrativo que agenda turnos, busca pacientes y deriva a consultorio.")
-    Person(tutor, "Tutor / Dueño de Mascota", "Cliente que consulta el carnet de vacunas y estado de su mascota.")
-
-    System(sysVet, "Sistema VetGestión", "Plataforma de gestión clínica veterinaria, historiales versionados, prescripciones y control de interacciones.")
-
-    System_Ext(omnia, "Vademécum Externo OMIA", "Servicio externo de consulta de fármacos e interacciones medicamentosas.")
-
-    Rel(vet, sysVet, "Registra atenciones, edita historial y prescribe", "HTTPS")
-    Rel(sec, sysVet, "Busca pacientes y gestiona recepción", "HTTPS")
-    Rel(tutor, sysVet, "Consulta ficha e historial sanitario", "HTTPS")
-
-    Rel(sysVet, omnia, "Consulta tabla de interacciones y fármacos", "HTTPS / REST JSON")
+    title Contexto de VetGestión
+    Person(vet, "Médico/a Veterinario/a", "Registra consultas, diagnósticos y vacunas y consulta historiales")
+    Person(sec, "Secretario/a o Recepcionista", "Registra turnos, pagos y datos de tutores y mascotas")
+    Person(tutor, "Tutor/a de Mascota", "Solicita turnos y consulta información de su mascota")
+    System(sis, "VetGestión", "Gestiona la clínica veterinaria: atención clínica, historial, turnos y pagos")
+    System_Ext(omia, "Base de Datos Externa OMIA", "Catálogo de enfermedades y rasgos hereditarios en animales")
+    Rel(vet, sis, "Registra y consulta información clínica", "HTTPS")
+    Rel(sec, sis, "Registra turnos, pagos y datos de tutores y mascotas", "HTTPS")
+    Rel(tutor, sis, "Solicita turnos y consulta historial", "HTTPS")
+    Rel(sis, omia, "Consulta patologías de referencia", "HTTPS")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-### 3.2 Catálogo del Contexto
+### 3.3 Coherencia con el DFD del TP1
 
-#### Elementos
-| Nombre | Tipo | Responsabilidad |
-| :--- | :--- | :--- |
-| **Médico/a Veterinario/a** | Persona | Registrar atenciones clínicas, consultar y rectificar historiales, prescribir tratamientos. |
-| **Asistente / Recepcionista** | Persona | Recepción de pacientes, gestión administrativa y búsqueda en el sistema. |
-| **Tutor / Dueño de Mascota** | Persona | Consulta pasiva de información sanitaria de su mascota. |
-| **Sistema VetGestión** | Sistema | Software de gestión clínica, registro de consultas, historiales inalterables y validaciones. |
-| **Vademécum Externo OMIA** | Sistema Externo | Provee datos estandarizados de fármacos e incompatibilidades medicamentosas. |
+| Elemento del DFD Nivel 0 | Elemento C4 | Observación |
+|---|---|---|
+| Proceso 0 «Gestionar Clínica Veterinaria» | Sistema «VetGestión» | El proceso único del DFD es el sistema completo |
+| Secretario/a o Recepcionista | Persona con el mismo nombre | Igual |
+| Médico/a Veterinario/a | Persona con el mismo nombre | Igual |
+| Tutor/a de Mascota | Persona con el mismo nombre | Igual |
+| Base de Datos Externa OMIA | Sistema externo con el mismo nombre | Igual |
+| Flujos de respuesta del sistema (confirmaciones, historia clínica, recordatorios) | No se dibujan | En C4 solo se dibuja la flecha de quien inicia la comunicación (secc. 4.6 de la guía) |
 
-#### Relaciones
-| Origen | Destino | Qué se comunica | Protocolo |
-| :--- | :--- | :--- | :--- |
-| Médico/a Veterinario/a | Sistema VetGestión | Registro de consultas, edita entradas, prescribe fármacos | HTTPS |
-| Asistente / Recepcionista | Sistema VetGestión | Búsqueda de pacientes y turnos | HTTPS |
-| Tutor / Dueño de Mascota | Sistema VetGestión | Consulta de ficha de mascota | HTTPS |
-| Sistema VetGestión | Vademécum OMIA | Consulta de compatibilidad de fármacos | HTTPS / REST JSON |
+Dos precisiones para el grupo: el DFD rotula el flujo hacia OMIA como «Consulta patología y código genético», mientras que RF-09 habla de búsquedas «utilizando términos de patologías animales» y el modelo de dominio no guarda ningún código genético; conviene alinear esa etiqueta en el TP1. Además, los **recordatorios** al tutor pertenecen a los procesos 1 y 3 (fuera del proceso elegido): ver el aspecto transversal «Notificaciones» en la sección 5.4.
 
 ---
 
