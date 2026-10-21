@@ -34,16 +34,22 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 
 ### 2.1 Restricciones Técnicas
 - **R1 (Navegador y Dispositivos):** El cliente web debe funcionar en navegadores modernos (Chrome, Firefox, Edge, Safari) sin requerir plug-ins adicionales y ser operable desde tablets de consultorio.
-- **R2 (Tecnología Backend y Persistencia):** El servidor debe implementarse en Python 3.12 utilizando el framework Flask para la API REST, y PostgreSQL 16 como motor de base de datos relacional.
-- **R3 (Sistemas Externos):** La consulta de interacciones medicamentosas debe integrarse obligatoriamente con la API REST externa de OMIA vía HTTPS/JSON.
+- **R2 (Tecnología Backend y Persistencia):** El servidor debe implementarse en Python utilizando el framework Flask para la API REST, y PostgreSQL como motor de base de datos relacional.
+- **R3 (Sistemas Externos):** la consulta a OMIA es de solo lectura (RF-09). No se asume una API de integración estable.
 
 ### 2.2 Restricciones del Equipo y Tecnología
 - **R4 (Tamaño y Experiencia del Equipo):** Proyecto desarrollado por un equipo reducido (3 integrantes) con alta familiaridad en arquitecturas web tradicionales (Cliente-Servidor / Capas) y tiempo acotado.
-- **R5 (Simplicidad Operativa):** Se descartan soluciones con alta sobrecarga de configuración o indirección excessive (como microservicios o patrones de indirección compleja) para evitar sobreingeniería y garantizar la mantenibilidad del código.
+- **R5 (Simplicidad Operativa):** Se descartan soluciones con alta sobrecarga de configuración o indirección excesiva (como microservicios o patrones de indirección compleja) para evitar sobreingeniería y garantizar la mantenibilidad del código.
 
 ### 2.3 Restricciones de Tiempo y Entorno
 - **R6 (Ciclo de Entrega):** La arquitectura debe completarse y ser demostrable dentro del plazo del cuatrimestre.
 - **R7 (Entorno de Despliegue):** El despliegue inicial se realiza en un servidor único o contenedorizado con Docker, sin infraestructura distribuida multi-región.
+
+### 2.4 Restricciones de Proceso
+- **R8(Ciclo de Vida)**: Se ha seleccionado un ciclo de vida incremental, así los módulos se entregarán por etapas, pudiendo agregar módulos sin reescribir los anteriores
+
+### 2.5 Restricciones Legales y Éticas
+- **R9 (Protección de Datos)**: Se exige confidencialidad de los datos personales de los tutores bajo las Leyes argentinas y el código de ética de la IEEE/ACR
 
 ---
 
@@ -108,7 +114,7 @@ Los siguientes cinco escenarios seleccionados en el TP2 condicionan estructuralm
 - **Atributo ISO/IEC 25010:** Seguridad de la Información / Integridad.
 - **Escenario:** Un usuario autenticado con rol no clínico (Secretario/Tutor) envía una petición HTTP directa al servidor intentando alterar un diagnóstico clínico.
 - **Medida de respuesta:** 100% de las peticiones no autorizadas rechazadas; 0 registros modificados; evento registrado en ≤ 1 s con usuario, acción y recurso.
-- **Por qué es Driver:** Exige que la lógica de autorización (RBAC) esté strictly centralizada en el Backend (Capa de Servicios/Middleware) y no delegada a la interfaz cliente.
+- **Por qué es Driver:** Exige que la lógica de autorización (RBAC) esté estrictamente centralizada en el Backend (Capa de Servicios/Middleware) y no delegada a la interfaz cliente.
 - **Prioridad entre Drivers:** Media. Es un mecanismo conocido, pero debe valer en todas las operaciones
 
 ### EC-03: Caída de la Base de Datos en Plena Jornada (Fiabilidad - Capacidad de Recuperación)
