@@ -6,12 +6,14 @@
 El propósito de este documento es especificar la arquitectura de software del **Sistema de Gestión Clínica Veterinaria (VetGestión)**. La arquitectura aquí descripta establece la estructura global del sistema, la división en contenedores y componentes, la selección de estilos y patrones arquitectónicos, las tácticas para satisfacer los requerimientos no funcionales (atributos de calidad) y las decisiones de diseño fundamentales que condicionan el desarrollo.
 
 ### 1.2 Alcance
-El alcance de esta especificación se centra en los procesos transaccionales centrales seleccionados en el TP1 y refinados en el TP2:
-- **CU-01:** Registrar atención y evolución clínica.
-- **CU-02:** Consultar e interrogar el historial clínico de un paciente.
-- **CU-03:** Gestionar tratamientos, prescribir medicamentos y validar alertas por interacciones medicamentosas.
+La guía indica que la arquitectura se define para el o los procesos elegidos en el TP1 y que el resto del sistema se representa como caja negra. El proceso elegido es **Gestión Clínica e Historial** (`docs/requirements/RF.md` y `slices.md`). En el DFD (diagrama de flujo de datos) de Nivel 1 del TP1 (`docs/architecture/diagrama-de-contexto-dfd.md`) corresponde a los procesos 2 y 4:
 
-El resto de los módulos del sistema (como la agenda de turnos o el registro administrativo de pacientes) se representan como cajas negras o subsistemas externos que interactúan con el núcleo clínico.
+| Proceso del DFD Nivel 1 | ¿En alcance? | Tratamiento en la arquitectura | Requerimientos |
+|---|---|---|---|
+| 1. Gestionar Turnos y Pacientes | No | Caja negra: contenedor «Módulo administrativo» | Fuera del proceso elegido |
+| 2. Registrar Atención Clínica | **Sí** | Se detalla: «Interfaz web» y «API clínica» | RF-01 a RF-08, RF-10 a RF-12 · CU-01, CU-02, CU-03 · HU-01, HU-02, HU-03 |
+| 3. Gestionar Pagos | No | Caja negra: contenedor «Módulo administrativo» | Fuera del proceso elegido |
+| 4. Consultar Referencia OMIA | **Sí** | Componente «Adaptador de OMIA» dentro de la API clínica y sistema externo OMIA | RF-09 · CU-01, slice A3 |
 
 ### 1.3 Audiencia
 Este documento está diseñado para los siguientes roles organizacionales y técnicos:
