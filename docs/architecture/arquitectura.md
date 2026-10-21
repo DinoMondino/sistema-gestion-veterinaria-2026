@@ -31,7 +31,7 @@ Este documento está diseñado para los siguientes roles organizacionales y téc
 - **HU:** Historia de Usuario.
 - **JSON:** Notación de Objetos de JavaScript (JavaScript Object Notation).
 - **JWT:** JSON Web Token.
-- **OMIA:** Vademécum e Índice de Medicamentos Veterinarios Externo.
+- **OMIA:** Catálogo de enfermedades hereditarias, solo consulta opcional.
 - **ORM:** Mapeo Objeto-Relacional (Object-Relational Mapping).
 - **PITR:** Recuperación a un Punto en el Tiempo (Point-In-Time Recovery).
 - **RBAC:** Control de Acceso Basado en Roles (Role-Based Access Control).
