@@ -117,30 +117,36 @@ Los siguientes cinco escenarios seleccionados en el TP2 condicionan estructuralm
 - **Escenario:** El/la veterinario/a registra peso, síntomas y prescripción durante una urgencia con una sola mano libre, presión de tiempo y en una tablet.
 - **Medida de respuesta:** Registro de datos críticos en ≤ 45 s y ≤ 8 interacciones; 0% de pérdida de datos ante un error de validación.
 - **Por qué es Driver:** Exige una arquitectura con separación clara entre campos obligatorios y opcionales, diseño de DTOs atómicos en el Backend y conservación de estado en la UI sin bloquear la atención.
+- **Prioridad entre Drivers:** Baja. Gran parte se resuelve en la interfaz 
 
 ### EC-02: Petición de Modificación que Saltea la Interfaz (Seguridad - Integridad)
 - **Atributo ISO/IEC 25010:** Seguridad de la Información / Integridad.
 - **Escenario:** Un usuario autenticado con rol no clínico (Secretario/Tutor) envía una petición HTTP directa al servidor intentando alterar un diagnóstico clínico.
 - **Medida de respuesta:** 100% de las peticiones no autorizadas rechazadas; 0 registros modificados; evento registrado en ≤ 1 s con usuario, acción y recurso.
 - **Por qué es Driver:** Exige que la lógica de autorización (RBAC) esté strictly centralizada en el Backend (Capa de Servicios/Middleware) y no delegada a la interfaz cliente.
+- **Prioridad entre Drivers:** Media. Es un mecanismo conocido, pero debe valer en todas las operaciones
 
 ### EC-03: Caída de la Base de Datos en Plena Jornada (Fiabilidad - Capacidad de Recuperación)
 - **Atributo ISO/IEC 25010:** Fiabilidad / Capacidad de Recuperación.
 - **Escenario:** Falla de hardware o corrupción del motor de base de datos relacional durante el horario de atención clínica.
 - **Medida de respuesta:** RTO ≤ 4 h; RPO ≤ 15 min; 0 registros huérfanos tras la restauración.
 - **Por qué es Driver:** Exige organizar la persistencia con transacciones ACID, respaldos continuos (WAL / PITR) y un componente de manejo global de excepciones que ponga el sistema en modo degradado controlado (aviso de mantenimiento) sin corromper datos.
+- **Prioridad entre Drivers:**  Más alta. Requiere un contenedor nuevo y práctica operativa
+
 
 ### EC-04: Corrección de una Entrada Histórica (Seguridad - Responsabilidad / Accountability)
 - **Atributo ISO/IEC 25010:** Seguridad de la Información / Responsabilidad.
 - **Escenario:** Un/a veterinario/a corrige el diagnóstico de una consulta registrada semanas atrás.
 - **Medida de respuesta:** 100% de las ediciones reconstruibles (autor, fecha/hora, versión previa, versión nueva, motivo); 0 ediciones sin motivo obligatorio.
 - **Por qué es Driver:** Modela la base de datos como un almacén inmutable (Append-Only / Versionado), donde las consultas no se sobrescriben, y requiere un componente dedicado a la Bitácora de Auditoría en la capa de persistencia.
+- **Prioridad entre Drivers:** Alta. Requiere un contenedor nuevo y práctica operativa
 
 ### EC-05: Cambio de Formato o Reemplazo de OMIA (Mantenibilidad - Modificabilidad)
 - **Atributo ISO/IEC 25010:** Mantenibilidad / Modificabilidad.
 - **Escenario:** El proveedor externo OMIA modifica el formato JSON de sus respuestas o debe ser reemplazado por otro vademécum.
 - **Medida de respuesta:** Cambio implementado y desplegado por 1 persona en ≤ 2 días; 0 módulos modificados fuera del componente de integración.
 - **Por qué es Driver:** Exige aislar la dependencia externa dentro de un componente exclusivo de Integración/Infraestructura en la capa correspondiente, evitando que los detalles de la API de OMIA se propaguen al dominio o a la interfaz.
+- **Prioridad entre Drivers:** Media/baja. Riesgo técnico declarado en el SRS
 
 ---
 
