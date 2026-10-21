@@ -122,43 +122,60 @@ Dos precisiones para el grupo: el DFD rotula el flujo hacia OMIA como «Consulta
 
 ## 4. Drivers Arquitectónicos
 
-Los siguientes cinco escenarios seleccionados en el TP2 condicionan estructuralmente la arquitectura del sistema:
 
-### EC-01: Operabilidad en Urgencia Clínica (Usabilidad - Operabilidad)
-- **Atributo ISO/IEC 25010:** Capacidad de Interacción / Operabilidad.
-- **Escenario:** El/la veterinario/a registra peso, síntomas y prescripción durante una urgencia con una sola mano libre, presión de tiempo y en una tablet.
-- **Medida de respuesta:** Registro de datos críticos en ≤ 45 s y ≤ 8 interacciones; 0% de pérdida de datos ante un error de validación.
-- **Por qué es Driver:** Exige una arquitectura con separación clara entre campos obligatorios y opcionales, diseño de DTOs atómicos en el Backend y conservación de estado en la UI sin bloquear la atención.
-- **Prioridad entre Drivers:** Baja. Gran parte se resuelve en la interfaz 
+### 4.1 Escenarios del TP2 con identificador
 
-### EC-02: Petición de Modificación que Saltea la Interfaz (Seguridad - Integridad)
-- **Atributo ISO/IEC 25010:** Seguridad de la Información / Integridad.
-- **Escenario:** Un usuario autenticado con rol no clínico (Secretario/Tutor) envía una petición HTTP directa al servidor intentando alterar un diagnóstico clínico.
-- **Medida de respuesta:** 100% de las peticiones no autorizadas rechazadas; 0 registros modificados; evento registrado en ≤ 1 s con usuario, acción y recurso.
-- **Por qué es Driver:** Exige que la lógica de autorización (RBAC) esté estrictamente centralizada en el Backend (Capa de Servicios/Middleware) y no delegada a la interfaz cliente.
-- **Prioridad entre Drivers:** Media. Es un mecanismo conocido, pero debe valer en todas las operaciones
+Cada escenario de `docs/requirements/quality-scenarios.md` recibe un identificador `EC-xx` (EC: escenario de calidad). En ISO/IEC 25010:2023 el atributo elegido es la subcaracterística; la columna «Atributo (libro)» aplica la Tabla 1 de la guía, que lo relaciona con los atributos de Bass, Clements y Kazman.
 
-### EC-03: Caída de la Base de Datos en Plena Jornada (Fiabilidad - Capacidad de Recuperación)
-- **Atributo ISO/IEC 25010:** Fiabilidad / Capacidad de Recuperación.
-- **Escenario:** Falla de hardware o corrupción del motor de base de datos relacional durante el horario de atención clínica.
-- **Medida de respuesta:** RTO ≤ 4 h; RPO ≤ 15 min; 0 registros huérfanos tras la restauración.
-- **Por qué es Driver:** Exige organizar la persistencia con transacciones ACID, respaldos continuos (WAL / PITR) y un componente de manejo global de excepciones que ponga el sistema en modo degradado controlado (aviso de mantenimiento) sin corromper datos.
-- **Prioridad entre Drivers:**  Más alta. Requiere un contenedor nuevo y práctica operativa
+| ID | Escenario del TP2 | Subcaracterística ISO/IEC 25010:2023 (característica) | Atributo (libro) | Medida de la respuesta |
+|---|---|---|---|---|
+| `EC-01` | 1.1 Registro de una consulta en una urgencia clínica | Operabilidad (Capacidad de interacción) | Usabilidad | ≤ 45 s y ≤ 8 interacciones; 0 pérdidas de datos ante un error de validación |
+| `EC-02` | 2.1 Petición de modificación clínica que saltea la interfaz | Integridad (Seguridad de la información) | Seguridad | 100 % de peticiones no autorizadas rechazadas; 0 registros modificados; evento registrado en ≤ 1 s |
+| `EC-03` | 3.1 Caída de la base de datos en plena jornada | Capacidad de recuperación (Fiabilidad) | Disponibilidad | RTO ≤ 4 h; RPO ≤ 15 min; 0 registros huérfanos; restauración de prueba por etapa |
+| `EC-04` | 4.1 Corrección de una entrada histórica | Responsabilidad (Seguridad de la información) | Seguridad | 100 % de las ediciones reconstruibles; 0 ediciones sin motivo; auditoría inalterable |
+| `EC-05` | 5.1 OMIA cambia su formato o debe reemplazarse | Modificabilidad (Mantenibilidad) | Modificabilidad | ≤ 2 días y 1 persona; 0 módulos modificados fuera del adaptador; regresión de CU-01 sin cambios |
 
+RTO (*recovery time objective*) es el tiempo máximo tolerable para restablecer el servicio; RPO (*recovery point objective*) es la máxima pérdida de datos confirmados tolerable, medida en tiempo.
 
-### EC-04: Corrección de una Entrada Histórica (Seguridad - Responsabilidad / Accountability)
-- **Atributo ISO/IEC 25010:** Seguridad de la Información / Responsabilidad.
-- **Escenario:** Un/a veterinario/a corrige el diagnóstico de una consulta registrada semanas atrás.
-- **Medida de respuesta:** 100% de las ediciones reconstruibles (autor, fecha/hora, versión previa, versión nueva, motivo); 0 ediciones sin motivo obligatorio.
-- **Por qué es Driver:** Modela la base de datos como un almacén inmutable (Append-Only / Versionado), donde las consultas no se sobrescriben, y requiere un componente dedicado a la Bitácora de Auditoría en la capa de persistencia.
-- **Prioridad entre Drivers:** Alta. Requiere un contenedor nuevo y práctica operativa
+### 4.2 Criterio para decidir si un escenario es driver
 
-### EC-05: Cambio de Formato o Reemplazo de OMIA (Mantenibilidad - Modificabilidad)
-- **Atributo ISO/IEC 25010:** Mantenibilidad / Modificabilidad.
-- **Escenario:** El proveedor externo OMIA modifica el formato JSON de sus respuestas o debe ser reemplazado por otro vademécum.
-- **Medida de respuesta:** Cambio implementado y desplegado por 1 persona en ≤ 2 días; 0 módulos modificados fuera del componente de integración.
-- **Por qué es Driver:** Exige aislar la dependencia externa dentro de un componente exclusivo de Integración/Infraestructura en la capa correspondiente, evitando que los detalles de la API de OMIA se propaguen al dominio o a la interfaz.
-- **Prioridad entre Drivers:** Media/baja. Riesgo técnico declarado en el SRS
+Un escenario es un **driver arquitectónico** si su cumplimiento obliga a decidir sobre la estructura. Se aplican tres preguntas:
+
+1. ¿Condiciona la elección del **estilo** del sistema?
+2. ¿Obliga a dividir o crear **contenedores o componentes**?
+3. ¿Obliga a incorporar un **mecanismo** estructural (transacciones, copias, un adaptador, una separación de permisos)?
+
+Un escenario que se resuelve dentro de un solo componente o solo en la interfaz de usuario, sin afectar la estructura, no es un driver.
+
+| ID | ¿Estilo? | ¿Contenedores o componentes? | ¿Mecanismo? | Conclusión | Nivel de decisión que condiciona |
+|---|---|---|---|---|---|
+| `EC-01` | No | Sí: un componente cliente que conserve el estado del formulario y un contrato de errores por campo entre la interfaz y el servidor | No | **Driver** | Patrón (MVC en la interfaz web) |
+| `EC-02` | Sí: control centralizado en el servidor (cliente-servidor) | Sí: componente de autorización; la base no accesible desde el cliente | Sí: separación de acceso | **Driver** | Estilo y aspecto transversal |
+| `EC-03` | Sí: repositorio (transacciones sobre un almacén central) | Sí: contenedor «Almacén de respaldos» y componentes de excepciones y salud | Sí: transacciones, copias, restauración | **Driver** | Estilo y contenedor |
+| `EC-04` | Sí: repositorio (permisos y auditoría centralizados) | Sí: componente de auditoría | Sí: historial versionado y esquema de auditoría separado | **Driver** | Estilo, modelo de datos y aspecto transversal |
+| `EC-05` | No | Sí: componente adaptador y regla de dependencias | Sí: encapsulamiento de la integración | **Driver** | Patrón (capas) |
+
+**Qué quedó afuera de esta clasificación.** Dentro de `EC-01`, lo que corresponde solo a la interfaz (orden de los campos, teclado numérico, colores, textos de error) pertenece al TP2 y no es un driver. Los cinco escenarios son drivers, pero con distinto nivel de impacto: `EC-02`, `EC-03` y `EC-04` condicionan el estilo; `EC-01` y `EC-05` condicionan patrones dentro de un contenedor.
+
+### 4.3 Qué mira la arquitectura además de los escenarios
+
+| Fuente | Qué aporta |
+|---|---|
+| RF y HU del TP1 | RF-08 («validación exclusiva de rol») y HU-02 («de su autoría») fijan qué debe autorizar el servidor; HU-01 («sin perder la información cargada») respalda `EC-01`; HU-03 y CU-03 definen el servicio de alertas |
+| Restricciones (sección 2) | R4 y R5 inclinan hacia cliente-servidor con capas y descartan microservicios; R9 pide poder agregar el módulo administrativo sin tocar el clínico |
+| DFD Nivel 1 | Los procesos 1, 2, 3 y 4 se relacionan solo a través de almacenes de datos (D1 a D4), sin flujos directos entre procesos: es la base del estilo repositorio |
+
+### 4.4 Prioridad entre drivers
+
+Criterio del grupo: cuando dos drivers entran en conflicto, se prioriza la **integridad y trazabilidad de los datos clínicos** (`EC-02`, `EC-03`, `EC-04`) sobre la comodidad de carga (`EC-01`) y sobre la facilidad de cambio (`EC-05`). La razón es que un dato clínico corrompido o sin autoría no se puede reconstruir después, mientras que una carga incómoda o un cambio que cuesta un día más sí se pueden corregir.
+
+| ID | Importancia para el negocio | Dificultad técnica | Comentario |
+|---|---|---|---|
+| `EC-03` | Alta | Alta | Requiere un contenedor nuevo y práctica operativa |
+| `EC-04` | Alta | Media | Afecta el modelo de datos |
+| `EC-02` | Alta | Media | Es un mecanismo conocido, pero debe valer en todas las operaciones |
+| `EC-05` | Media | Media | Riesgo técnico declarado en el SRS |
+| `EC-01` | Media | Baja | Gran parte se resuelve en la interfaz |
 
 ---
 
