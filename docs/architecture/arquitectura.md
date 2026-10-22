@@ -875,10 +875,32 @@ Todo driver llega a al menos un contenedor o componente, y cada driver tiene al 
 ## 11. Glosario y Bibliografía
 
 ### 11.1 Glosario
-- **Append-Only:** Modelo de datos en el que las operaciones de modificación no sobrescriben registros existentes, sino que insertan un nuevo registro con el estado actualizado.
-- **Arquitectura en Capas:** Patrón de arquitectura que organiza los componentes de software en niveles jerárquicos de responsabilidad (Presentación, Servicios/Dominio, Infraestructura/Persistencia), donde cada capa solo depende de las capas inferiores.
-- **Driver Arquitectónico:** Requerimiento funcional, restricción o escenario de calidad que condiciona de manera determinante la estructura y diseño del sistema.
-- **Táctica Arquitectónica:** Decisión de diseño focalizada que afecta la respuesta ante un escenario de atributo de calidad determinado.
+
+| Término | Significado |
+|---|---|
+| ACID | Propiedades de una transacción: atomicidad, consistencia, aislamiento y durabilidad |
+| API | Interfaz de programación de aplicaciones: las operaciones que un programa ofrece a otros |
+| Adaptador | Pieza que traduce lo que ofrece un sistema externo al modelo propio |
+| C4 | Modelo de documentación de arquitectura en cuatro niveles: contexto, contenedores, componentes y código |
+| CQRS | Separación de responsabilidades entre comandos (escrituras) y consultas (lecturas) |
+| DA | Decisión de arquitectura |
+| DFD | Diagrama de flujo de datos |
+| Driver arquitectónico | Escenario de calidad cuyo cumplimiento condiciona la estructura del sistema |
+| EC | Escenario de calidad |
+| Estilo | Marco abstracto que organiza todo un sistema (por ejemplo, cliente-servidor) |
+| HTTPS | HTTP (protocolo de la web) sobre una conexión cifrada |
+| HU / CU / RF | Historia de usuario / caso de uso / requerimiento funcional |
+| JSON | Formato de texto para intercambiar datos estructurados |
+| MVC / MVVM | Modelo-Vista-Controlador / Modelo-Vista-Modelo de Vista |
+| OMIA | *Online Mendelian Inheritance in Animals*: catálogo de rasgos y enfermedades hereditarias en animales |
+| Paciente | En RF, HU y casos de uso, la mascota atendida; en el modelo de dominio del TP1 se llama «Mascota» (conviene unificar el término) |
+| Patrón | Solución reutilizable a un problema recurrente dentro de un contenedor |
+| REST | Estilo de diseño de APIs sobre HTTP, donde cada recurso tiene una dirección y se usan operaciones estándar |
+| RTO / RPO | Tiempo máximo tolerable para restablecer el servicio / máxima pérdida de datos confirmados tolerable |
+| SOA | Arquitectura orientada a servicios |
+| SQL | Lenguaje para consultar y modificar bases de datos relacionales |
+| Táctica | Decisión de diseño elemental que influye en la respuesta de un escenario de calidad |
+| TP | Trabajo práctico |
 
 ### 11.2 Bibliografía
 1. **Bass, L., Clements, P., & Kazman, R. (2021).** *Software Architecture in Practice* (4th ed.). Addison-Wesley Professional.
