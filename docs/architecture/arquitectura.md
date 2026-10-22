@@ -270,15 +270,89 @@ Una **táctica** es una decisión de diseño elemental que influye en el logro d
 
 ### 5.2 Estilos Arquitectónicos
 
-#### Estilo Base: Cliente-Servidor (Web Application / REST API)
-- **Principio:** El cliente (Navegador Web / SPA / Templates) inicia las peticiones HTTP/HTTPS hacia un Servidor Backend (API REST) que procesa la lógica y accede al Repositorio de Datos.
-- **Justificación:** Otorga un punto centralizado para aplicar seguridad y reglas de negocio (EC-02), simplifica el despliegue y minimiza la complejidad operativa para el equipo (Restricción R4).
-- **Qué mejora:** Control centralizado de seguridad, bajo acoplamiento cliente-servidor.
-- **Qué sacrifica:** El servidor Backend es un punto único de falla (single point of failure) si no se replica, y depende de la red.
+### 5.2 Estilos arquitectónicos (decisión global)
 
-#### Estilos Adicionales Integrados:
-1. **Repositorio (Repository Pattern):** La Base de Datos Relacional actúa como almacén central inmutable para historias clínicas, consultas y logs de auditoría (EC-03, EC-04).
-2. **Tuberías y Filtros (Pipe and Filter / Middleware):** El procesamiento de peticiones en el Backend sigue una cadena secuencial de filtros (autenticación -> autorización RBAC -> validación DTO -> controlador de servicio) para cortar tempranamente solicitudes inválidas (EC-02).
+Un **estilo** es un conjunto de principios que da un marco abstracto para una familia de sistemas: define el vocabulario de componentes y conectores y las restricciones sobre cómo se combinan (Shaw y Garlan). Responde a «¿cómo se organiza el sistema en su conjunto?» y se hace visible sobre todo en la vista de contenedores.
+
+#### 5.2.1 Estilos evaluados
+
+| Estilo | ¿Adoptado? | Motivo |
+|---|---|---|
+| Cliente-servidor | **Sí: estilo base** | `EC-02` pide control centralizado de la autorización en el servidor; R1, R2, R4 y R5 favorecen una estructura con pocas piezas que el equipo ya conoce |
+| Repositorio | **Sí: estilo adicional, solo para la zona de datos** | `EC-03` (transacciones sobre un almacén central) y `EC-04` (permisos y auditoría centralizados). Además, en el DFD Nivel 1 los procesos solo se comunican a través de almacenes de datos, y R9 pide agregar el módulo administrativo sin tocar el clínico |
+| Tuberías y filtros | No | El sistema no es un flujo de transformación de datos en etapas. La cadena de verificaciones de una petición dentro de la API es un mecanismo del framework, no el estilo del sistema; declararlo sería combinar por acumulación |
+| Orientada a eventos | No | Ningún escenario exige tareas lentas, picos de carga ni procesamiento diferido. La interrupción de red al guardar (CU-01, slice E1) se resuelve con una transacción atómica y con la conservación de lo cargado en el cliente |
+| Microservicios | No | R4 y R5; ningún escenario exige escalar o desplegar por separado, y `EC-05` se resuelve con encapsulamiento. Sumaría complejidad operativa y consistencia entre bases |
+| Monolítica | No se declara | La API clínica se despliega como una sola unidad, pero eso es una consecuencia y no un objetivo; su estructura interna se rige por el patrón de capas |
+| Microkernel, SOA y entre pares (*peer-to-peer*) | No | No hay núcleo con extensiones, ni bus de integración, ni nodos iguales |
+
+SOA es arquitectura orientada a servicios.
+
+#### 5.2.2 Estilo base: cliente-servidor
+
+- **Principio:** el servidor presta servicios a clientes que los solicitan.
+- **Dónde aplica:** a todo el sistema. El cliente es la «Interfaz web»; los servidores son la «API clínica» y el «Módulo administrativo».
+- **Qué mejora:** seguridad (control centralizado, `EC-02`), simplicidad de operación y de prueba (`EC-05`).
+- **Qué sacrifica:** el servidor es un punto único de falla; la carga se centraliza; el cliente depende de la red.
+- **Comprobación de restricciones (Tabla 4 de la guía), sobre la vista de contenedores v1:**
+
+| Restricción o regla del estilo | ¿Se cumple? | Evidencia en el diagrama |
+|---|---|---|
+| Los clientes no se comunican entre sí | Sí | Hay un único cliente |
+| El servidor no inicia la comunicación con el cliente | Sí | Ninguna flecha va del servidor a la interfaz |
+| El cliente no accede directamente a la base de datos | Sí | La interfaz web solo se conecta con las dos aplicaciones servidor |
+| El cliente inicia siempre la comunicación | Sí | Todas las flechas salen de la interfaz hacia los servidores |
+| El servidor expone una interfaz definida | Sí | La API clínica expone una interfaz REST con datos JSON |
+| La lógica y los datos compartidos viven en el servidor | Sí | Las reglas están en la API clínica y los datos en la base central |
+
+#### 5.2.3 Estilo adicional: repositorio
+
+- **Principio:** los datos compartidos viven en un almacén central que varias aplicaciones consultan y actualizan, y las aplicaciones solo se comunican entre sí a través de ese almacén.
+- **Dónde aplica:** solo a la **zona de datos**: la «Base de datos central» y las dos aplicaciones que la usan, «API clínica» y «Módulo administrativo».
+- **Por qué responde a escenarios:** `EC-03` y `EC-04` necesitan un único lugar donde se apliquen transacciones, permisos y auditoría. Las dos aplicaciones comparten datos reales (el proceso 2 lee los pacientes y los turnos que escribe el proceso 1, según el DFD Nivel 1), y el almacén central evita que se llamen directamente.
+- **Qué mejora:** consistencia e integridad (transacciones), permisos y auditoría en un único punto, y desacople entre módulos, lo que permite agregar el módulo administrativo en otra etapa (R9).
+- **Qué sacrifica:** el almacén es un punto único de falla; el esquema de datos acopla a quienes lo usan; la base puede volverse un cuello de botella al escalar.
+- **Cómo se conectan las zonas:** el estilo cliente-servidor y el repositorio se conectan por la conexión SQL de cada servidor a la base. Es el único punto de integración entre las dos aplicaciones servidor.
+- **No confundir** con el «patrón repositorio» de diseño (clases que encapsulan consultas): acá se habla del estilo, es decir, de un almacén central compartido.
+- **Comprobación de restricciones (Tabla 4):**
+
+| Restricción o regla del estilo | ¿Se cumple? | Evidencia en el diagrama |
+|---|---|---|
+| Las aplicaciones no se comunican directamente entre sí | Sí | No hay flecha entre «API clínica» y «Módulo administrativo» |
+| El almacén es la fuente única de los datos | Sí | El «Almacén de respaldos» es una copia pasiva, no una fuente |
+| El acceso concurrente se controla (transacciones) | Sí | `EC-03`: transacciones en «Acceso a datos» |
+| El esquema de datos es conocido por todos los que lo usan | Sí, a documentar | Modelo de dominio del TP1 (`modelo_de_dominio_inicial.md`) |
+
+#### 5.2.4 Primera versión de la vista de contenedores
+
+```mermaid
+C4Container
+    title Contenedores de VetGestión (versión 1)
+    Person(vet, "Médico/a Veterinario/a", "Atiende, registra y consulta historiales")
+    Person(sec, "Secretario/a o Recepcionista", "Gestiona turnos, pacientes y pagos")
+    Person(tutor, "Tutor/a de Mascota", "Consulta información de su mascota")
+    System_Boundary(sis, "VetGestión") {
+        Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Presenta las pantallas en el navegador y conserva el estado de los formularios")
+        Container(api, "API clínica", "Python / Flask", "Autoriza, valida y aplica las reglas de los procesos clínicos")
+        Container(adm, "Módulo administrativo", "Sin detalle en este TP", "Caja negra: turnos, pacientes, tutores y pagos")
+        ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos: historial versionado, auditoría y datos administrativos")
+        ContainerDb(resp, "Almacén de respaldos", "Copias base y registro de transacciones", "Copias para restaurar la base a un instante previo a la falla")
+    }
+    System_Ext(omia, "Base de Datos Externa OMIA", "Catálogo de enfermedades y rasgos hereditarios en animales")
+    Rel(vet, web, "Usa", "HTTPS")
+    Rel(sec, web, "Usa", "HTTPS")
+    Rel(tutor, web, "Usa", "HTTPS")
+    Rel(web, api, "Solicita operaciones clínicas", "JSON/HTTPS")
+    Rel(web, adm, "Solicita operaciones administrativas", "JSON/HTTPS")
+    Rel(api, bd, "Lee y escribe", "SQL")
+    Rel(adm, bd, "Lee y escribe", "SQL")
+    Rel(bd, resp, "Archiva copias y transacciones", "Archivos")
+    Rel(api, omia, "Consulta patologías", "HTTPS")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+Los archivos estáticos de la interfaz web los sirve el mismo servidor web que expone la API (detalle de despliegue: TP4). Cada contenedor que existe por una táctica o un estilo se rastrea a una decisión: «Almacén de respaldos» (`DA-05`), «Base de datos central» (`DA-04`) y «Módulo administrativo» (`DA-04`). El catálogo definitivo y la verificación de las reglas 4.4, 4.6 y 4.7 son parte de la Parte B.
+
 
 ---
 
