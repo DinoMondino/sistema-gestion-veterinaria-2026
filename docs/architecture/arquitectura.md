@@ -116,7 +116,6 @@ C4Context
 | Base de Datos Externa OMIA | Sistema externo con el mismo nombre | Igual |
 | Flujos de respuesta del sistema (confirmaciones, historia clínica, recordatorios) | No se dibujan | En C4 solo se dibuja la flecha de quien inicia la comunicación (secc. 4.6 de la guía) |
 
-Dos precisiones para el grupo: el DFD rotula el flujo hacia OMIA como «Consulta patología y código genético», mientras que RF-09 habla de búsquedas «utilizando términos de patologías animales» y el modelo de dominio no guarda ningún código genético; conviene alinear esa etiqueta en el TP1. Además, los **recordatorios** al tutor pertenecen a los procesos 1 y 3 (fuera del proceso elegido): ver el aspecto transversal «Notificaciones» en la sección 5.4.
 
 ---
 
@@ -181,46 +180,91 @@ Criterio del grupo: cuando dos drivers entran en conflicto, se prioriza la **int
 
 ## 5. Estrategia de Solución
 
-### 5.1 Tácticas Seleccionadas y Descartadas por Driver
+### 5.1 Tácticas por driver
 
-#### EC-01 (Operabilidad)
-- **Tácticas Seleccionadas:**
-  1. *Iniciativa del usuario / Cancelar:* Opción explícita para abortar operaciones en curso.
-  2. *Iniciativa del sistema / Mantener modelo de tarea y estado:* Conservar los datos tipeados en el cliente cuando ocurre un error de validación.
-  3. *Acotar tiempos de ejecución:* Agrupar la validación en una sola pasada de DTO atómico.
-- **Tácticas Descartadas:**
-  - *Pausar y reanudar sesiones complejas en background multi-dispositivo:* Aporta complejidad innecesaria para el flujo de consultorio local.
+Una **táctica** es una decisión de diseño elemental que influye en el logro de la respuesta de un escenario de calidad (Bass et al.). Las de las tablas siguientes salen de la Tabla 2 de la guía; cuando se usa una que no está allí, se aclara. Una táctica es una decisión, no una tecnología.
 
-#### EC-02 (Integridad)
-- **Tácticas Seleccionadas:**
-  1. *Identificar, autenticar y autorizar actores:* Verificación de sesión/token JWT y rol (RBAC) en la capa de presentación/middleware del Backend antes de ejecutar cualquier comando de escritura.
-  2. *Limitar acceso:* La base de datos es únicamente accesible por el contenedor Backend API, no desde la red externa ni desde el cliente.
-  3. *Registro de auditoría:* Guardar log inmutable de intentos de acceso indebidos.
-- **Tácticas Descartadas:**
-  - *Cifrado asimétrico de payload en el cliente:* Sobrecosto computacional sin beneficio directo en una red privada protegida por HTTPS.
+#### EC-01 — Operabilidad (atributo del libro: Usabilidad)
 
-#### EC-03 (Capacidad de Recuperación)
-- **Tácticas Seleccionadas:**
-  1. *Transacciones:* Agrupar operaciones de escritura en bloques ACID atómicos.
-  2. *Rollback:* Deshacer cambios parciales si falla un paso de la transacción.
-  3. *Manejo de excepciones y Degradación controlada:* Interceptores de error que muestran pantallas amigables de mantenimiento si cae la BD.
-  4. *Redundancia pasiva (WAL / Backups):* Respaldo continuo de logs de transacciones para garantizar RPO ≤ 15 min.
-- **Tácticas Descartadas:**
-  - *Redundancia activa multi-región con clustering síncrono:* Inviable por costos y complejidad de infraestructura para la escala del proyecto.
+| Grupo | Táctica seleccionada | Cómo contribuye a la medida | Dónde se implementa |
+|---|---|---|---|
+| Iniciativa del sistema | Mantener modelos de tarea, de usuario y del sistema | El cliente conserva lo ingresado y el contexto del paciente (por ejemplo, el último peso); ante un error de validación no se pierde nada → «0 pérdidas de datos» | Modelo de formulario |
+| Controlar la demanda (atributo Desempeño, usada aquí por su efecto en el tiempo de carga) | Reducir sobrecarga | El servidor valida todos los campos en una sola pasada y devuelve todos los errores juntos, en lugar de uno por vez → menos interacciones y menos tiempo | Validación de registros clínicos |
 
-#### EC-04 (Responsabilidad / Accountability)
-- **Tácticas Seleccionadas:**
-  1. *Registro de auditoría (Audit Logging):* Componente que escribe en un almacén de auditoría inmodificable los cambios de versión.
-  2. *Separar entidades / Versionado Inalterable:* Diseñar la entidad `Consulta` como un historial append-only mediante referencias a versiones anteriores (`parent_version_id`).
-- **Tácticas Descartadas:**
-  - *Firma digital con certificado criptográfico PKI individual por cada consulta:* Innecesario y complejo según el marco normativo actual.
+| Táctica descartada | Motivo |
+|---|---|
+| Cancelar | Aporta control, pero no contribuye a la medida; ya está resuelta como decisión de interfaz en el TP2 (botón «Cancelar») sin impacto estructural |
+| Deshacer | No hay un requerimiento de revertir un guardado: la corrección se hace con una edición versionada (RF-08) |
+| Pausar y reanudar | «Completar después» se logra editando una entrada ya guardada (RF-08), no con borradores persistidos en el servidor, que agregarían estado y complejidad |
+| Agregar (acciones sobre varios elementos) | Ninguna HU pide operar sobre varios elementos a la vez |
+| Acotar tiempos de ejecución | La medida es el tiempo humano de carga, no el tiempo de ejecución del sistema; fijar un máximo de ejecución no acerca el valor esperado |
+| Introducir concurrencia / Aumentar recursos | No hay demanda que lo justifique: hay un usuario clínico por consulta |
 
-#### EC-05 (Modificabilidad)
-- **Tácticas Seleccionadas:**
-  1. *Encapsular / Dividir módulos:* Aislar la comunicación HTTP y el parseo del JSON de OMIA en un componente exclusivo de integración (`ServicioIntegracionOMIA`).
-  2. *Restringir dependencias:* La capa de servicios/dominio invoca el servicio de integración a través de contratos simples, sin conocer los detalles de red ni la estructura externa de OMIA.
-- **Tácticas Descartadas:**
-  - *Descomponer en microservicios la llamada a OMIA:* Introduce latencia de red y complejidad operativa innecesaria para un equipo reducido.
+#### EC-02 — Integridad (atributo del libro: Seguridad)
+
+| Grupo | Táctica seleccionada | Cómo contribuye a la medida | Dónde se implementa |
+|---|---|---|---|
+| Resistir ataques | Identificar, autenticar y autorizar actores | Cada operación de escritura se atribuye a un usuario autenticado y el servidor verifica rol y autoría antes de ejecutarla → 100 % de rechazos | Autenticación y autorización |
+| Resistir ataques | Limitar acceso | La base de datos solo es accesible desde los contenedores servidor: no hay camino para modificar datos que evite la verificación → «0 registros modificados» | Base de datos central |
+| Resistir ataques | Limitar exposición | Hacia afuera solo se expone la interfaz HTTPS del sistema, no la base ni los respaldos | Despliegue (TP4) |
+| Resistir ataques | Cifrar datos | HTTPS protege credenciales y sesión; sin eso un tercero podría suplantar un rol clínico | Relaciones entre contenedores |
+| Recuperarse | Registro de auditoría | Cada rechazo genera un evento con usuario, acción y recurso en ≤ 1 s | Auditoría |
+
+| Táctica descartada | Motivo |
+|---|---|
+| Detectar intrusión, Detectar negación de servicio, Revocar acceso, Informar actores | La medida se refiere a una petición individual, no a patrones de ataque repetidos. El registro de auditoría deja la base para sumarlas en un incremento posterior; hoy exigirían un componente de análisis y alertas fuera de R4 y R5 |
+| Separar entidades (zonas de red) | Lo esencial se obtiene con «Limitar acceso»; la separación por redes se define en el despliegue (TP4) |
+
+#### EC-03 — Capacidad de recuperación (atributo del libro: Disponibilidad)
+
+| Grupo | Táctica seleccionada | Cómo contribuye a la medida | Dónde se implementa |
+|---|---|---|---|
+| Detectar fallos | Detección de excepciones | Un fallo de conexión o de consulta se reconoce como tal y activa el modo degradado | Gestión de excepciones |
+| Detectar fallos | Ping y eco | Una ruta de estado comprueba que la base responde; acorta el tiempo hasta detectar la caída, que cuenta dentro del RTO | Chequeo de salud |
+| Recuperarse | Redundancia de repuesto | Copia base más archivo continuo del registro de transacciones en un almacén aparte; ante la falla se levanta una instancia de reemplazo y se restaura al instante previo → RPO ≤ 15 min y RTO ≤ 4 h | Almacén de respaldos |
+| Prevenir fallos | Transacciones | Cada operación clínica (consulta, peso, vacunas) se guarda completa o no se guarda → «0 registros huérfanos» | Acceso a datos |
+| Recuperarse | Rollback | Si un paso falla, la transacción se deshace y no quedan datos parciales | Acceso a datos |
+| Recuperarse | Manejo de excepciones | Los fallos de la base se traducen en una respuesta controlada y comprensible | Gestión de excepciones |
+| Recuperarse | Degradación controlada | Con la base caída se informa mantenimiento y no se aceptan escrituras que se perderían; la interfaz conserva lo cargado (`EC-01`) | Gestión de excepciones y Modelo de formulario |
+| Detectar fallos | Comprobación de consistencia posterior a la restauración (*sanity checking* en Bass et al.; no figura en la Tabla 2) | Tras restaurar se verifican claves e integridad de las cadenas de versiones → «0 registros huérfanos» | Procedimiento de restauración y Acceso a datos |
+
+| Táctica descartada | Motivo |
+|---|---|
+| Redundancia activa o pasiva (réplica en caliente con conmutación automática) | Un RTO de 4 h no la exige; duplicaría infraestructura y operación (R5, R7) |
+| Latido y Monitoreo continuo | No hay un proceso separado que emita latidos; «Ping y eco» alcanza para detectar |
+| Reintento | No resuelve una falla total de la base, solo las pasajeras |
+
+#### EC-04 — Responsabilidad (atributo del libro: Seguridad)
+
+| Grupo | Táctica seleccionada | Cómo contribuye a la medida | Dónde se implementa |
+|---|---|---|---|
+| Recuperarse | Registro de auditoría | Cada corrección guarda autor, fecha y hora, versión previa, versión nueva y motivo → 100 % reconstruibles | Auditoría |
+| Resistir ataques | Identificar, autenticar y autorizar actores | Cada acción se atribuye a una cuenta individual y solo el autor veterinario corrige (RF-08) | Autenticación y autorización |
+| Resistir ataques | Separar entidades | La auditoría vive en un esquema aparte, con permisos de solo inserción para la aplicación → no se puede editar ni borrar desde la aplicación | Base de datos central |
+| **Propia del grupo** (no está en la Tabla 2) | Versionado inmutable: solo se agregan versiones | Una corrección crea una versión nueva enlazada a la anterior y nunca sobrescribe → «conserva la versión original» | Servicio de registro clínico y Acceso a datos |
+| Prevenir fallos (atributo Disponibilidad) | Transacciones | La versión nueva y el registro de auditoría se confirman juntos: no hay corrección sin rastro ni rastro sin corrección | Acceso a datos |
+
+| Táctica descartada | Motivo |
+|---|---|
+| Firma digital con certificado por registro | Costo y complejidad desproporcionados para el equipo (R4); el escenario no la pide |
+| Cifrar la auditoría en reposo con clave separada | Es una protección válida, pero el escenario exige inalterabilidad, no confidencialidad; se difiere |
+| Enviar los registros a un servicio externo de logs | Sumaría un contenedor sin que ningún escenario lo exija |
+
+#### EC-05 — Modificabilidad (atributo del libro: Modificabilidad)
+
+| Grupo | Táctica seleccionada | Cómo contribuye a la medida | Dónde se implementa |
+|---|---|---|---|
+| Reducir acoplamiento | Encapsular | El adaptador expone una interfaz estable («buscar patología») y oculta formato y protocolo de OMIA → un cambio de formato no sale del adaptador | Adaptador de OMIA |
+| Reducir acoplamiento | Usar un intermediario | El adaptador media entre el servicio de referencias y OMIA | Adaptador de OMIA |
+| Reducir acoplamiento | Restringir dependencias | Solo el adaptador conoce el cliente y el formato de OMIA; los servicios no importan nada de OMIA → «0 módulos fuera del adaptador» | Reglas de dependencia de las capas |
+| Aumentar cohesión | Dividir módulos | La integración es un módulo separado del servicio de referencias | Adaptador de OMIA |
+| Capacidad de prueba (otro atributo) | Abstraer fuentes de datos | Los servicios se prueban con un adaptador simulado, de modo que la regresión de CU-01 no depende de OMIA | Servicio de referencias |
+
+| Táctica descartada | Motivo |
+|---|---|
+| Diferir el enlace (plug-ins, parametrización) | Hay un único proveedor; reemplazar OMIA equivale a escribir otro adaptador con la misma interfaz (≤ 2 días). Un mecanismo de plug-ins costaría más de lo que ahorra |
+| Abstraer servicios comunes | No hay otra integración externa que comparta funciones |
+| Redistribuir responsabilidades | No hay una función mal ubicada que corregir |
 
 ---
 
