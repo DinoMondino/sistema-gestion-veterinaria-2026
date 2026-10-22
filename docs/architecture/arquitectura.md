@@ -848,17 +848,19 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
 
 ---
 
-## 10. Trazabilidad
+### 10.1 Escenario → táctica → estilo o patrón → decisión → elemento C4
 
-### 10.1 Matriz de Trazabilidad Arquitectónica
+Los nombres de los elementos coinciden con los de las vistas v1. Esta tabla se cierra en la Parte B, cuando las vistas queden verificadas.
 
-| Escenario (TP2) | Atributo | Tácticas | Estilo / Patrón | Decisión | Elementos C4 Afectados |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **EC-01** (Urgencia clínica) | Usabilidad / Operabilidad | Mantener estado; Acotar tiempos | Capas / Validaciones DTO | **DA-01** | `Aplicación Web Frontend`, `Controlador de Consultas` |
-| **EC-02** (Petición manipulada) | Seguridad / Integridad | Autenticar y autorizar (RBAC); Limitar acceso | Capas / Pipe & Filter Middleware | **DA-02** | `Middleware Auth & RBAC`, `Componente de Auditoría` |
-| **EC-03** (Caída de BD) | Fiabilidad / Recuperación | Transacciones; Rollback; WAL Backups | Repositorio / Persistencia ORM | **DA-03** | `Repositorio de Persistencia`, `Base de Datos PostgreSQL` |
-| **EC-04** (Edición histórica) | Seguridad / Responsabilidad | Auditoría; Versionado Append-Only | Capas / Componente Transversal | **DA-04** | `Servicio Historial`, `Componente Auditoría`, `Base de Datos PostgreSQL` |
-| **EC-05** (Cambio en OMIA) | Mantenibilidad / Modificabilidad | Encapsular; Restringir dependencias | Capas / Módulo de Integración Aislado | **DA-05** | `ServicioIntegracionOMIA`, `Servicio Prescripción` |
+| Escenario (TP2) | Atributo (Tabla 1) | Tácticas | Estilo o patrón | Decisión | Elemento C4 |
+|---|---|---|---|---|---|
+| `EC-01` | Usabilidad | Mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga | Patrón MVC (interfaz web); estilo cliente-servidor | `DA-02` | Interfaz web: Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API · API clínica: Validación de registros clínicos |
+| `EC-02` | Seguridad | Identificar, autenticar y autorizar; limitar acceso; limitar exposición; cifrar datos; registro de auditoría | Estilo cliente-servidor (control centralizado); patrón capas; aspecto transversal | `DA-01`, `DA-03` | API clínica: Autenticación y autorización, Controladores REST, Auditoría · Base de datos central (acceso restringido) |
+| `EC-03` | Disponibilidad | Detección de excepciones; ping y eco; redundancia de repuesto; transacciones; rollback; manejo de excepciones; degradación controlada; comprobación de consistencia | Estilo repositorio; aspectos transversales | `DA-04`, `DA-05` | Base de datos central · Almacén de respaldos · API clínica: Acceso a datos, Gestión de excepciones, Chequeo de salud |
+| `EC-04` | Seguridad | Registro de auditoría; autenticar y autorizar; separar entidades; versionado inmutable (propia); transacciones | Estilo repositorio; aspecto transversal «Auditoría» | `DA-04`, `DA-06` | API clínica: Servicio de registro clínico, Auditoría, Acceso a datos · Base de datos central (esquema de auditoría) |
+| `EC-05` | Modificabilidad | Encapsular; usar un intermediario; restringir dependencias; dividir módulos; abstraer fuentes de datos | Patrón capas | `DA-07`, `DA-08` | API clínica: Servicio de referencias, Adaptador de OMIA, Servicio de prescripciones y alertas |
+
+Todo driver llega a al menos un contenedor o componente, y cada driver tiene al menos una decisión (`EC-01`: DA-02; `EC-02`: DA-03; `EC-03`: DA-05; `EC-04`: DA-06; `EC-05`: DA-07).
 
 ### 10.2 Trazabilidad de Historias de Usuario a Elementos C4
 
