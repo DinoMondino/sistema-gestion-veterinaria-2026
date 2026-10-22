@@ -356,35 +356,198 @@ Los archivos estáticos de la interfaz web los sirve el mismo servidor web que e
 
 ---
 
-### 5.3 Patrones Arquitectónicos y Aspectos Transversales
+### 5.3 Patrones arquitectónicos (decisión local)
 
-#### Patrón por Contenedor (Backend API REST): Arquitectura en Capas (Layered Architecture)
-El contenedor Backend API se organiza internamente con una **Arquitectura en Capas tradicional**, limpia y sin sobreingeniería:
+#### 5.3.1 Patrones evaluados por contenedor
 
-1. **Capa de Presentación / Controladores (Controllers & Middleware):** Recibe solicitudes HTTP/REST, autentica el token, verifica permisos por rol (RBAC) y valida el formato del DTO enviado desde el cliente.
-2. **Capa de Servicios / Dominio (Application Services):** Modela la lógica clínica de negocio (orquestación de consultas, reglas de versionado inalterable y validación de prescripciones).
-3. **Capa de Infraestructura / Persistencia e Integración (Data Access & Integration):** Maneja las consultas SQL transaccionales hacia PostgreSQL y encapsula las peticiones HTTP externas hacia la API de OMIA.
+| Contenedor | Patrón | ¿Adoptado? | Motivo |
+|---|---|---|---|
+| API clínica | Capas | **Sí** | `EC-02` (control en la capa de servicios), `EC-05` (restringir dependencias y encapsular), capacidad de prueba; es lo que el equipo ya domina (R4) |
+| API clínica | Hexagonal | No | Mejora la prueba y el aislamiento de OMIA, pero agrega puertos y adaptadores para un único proveedor (sobreingeniería, Tabla 5). `EC-05` se logra con encapsulamiento dentro de capas |
+| API clínica | CQRS | No | No hay lecturas y escrituras con necesidades de escala distintas; la consistencia eventual entre modelos contradice la trazabilidad de `EC-04` |
+| API clínica | Broker | No | No hay cola ni tareas diferidas (ver 5.2.1) |
+| Interfaz web | MVC | **Sí** | `EC-01`: separar vista, modelo y controlador permite que el modelo conserve el estado ante errores |
+| Interfaz web | MVVM | No | Requiere un mecanismo de enlace de datos propio de un framework de interfaz, con más complejidad y depuración más difícil; el equipo trabaja con HTML y Python |
+| Módulo administrativo, Base de datos central, Almacén de respaldos | Ninguno en este TP | — | Caja negra o almacenes sin lógica propia |
+| (cualquiera) | Pizarra, Serverless | No | No hay problema sin algoritmo cerrado ni escalado variable que lo justifique |
 
-- **Por qué se eligió Capas:** Encaja perfectamente con la experiencia del equipo (Restricción R4), simplifica la implementación y el mantenimiento, y cumple estrictamente todos los drivers del proyecto (`EC-01` a `EC-05`) sin introducir interfaces ni indirecciones innecesarias.
-- **Regla estricta de Capas:** Las dependencias van en un solo sentido, de arriba hacia abajo (Presentación -> Servicios -> Infraestructura/Persistencia). Ninguna capa inferior depende de una superior.
+MVC es Modelo-Vista-Controlador; MVVM, Modelo-Vista-Modelo de Vista; CQRS, separación de comandos y consultas.
 
-#### Aspectos Transversales (Cross-Cutting Concerns):
-1. **Autenticación y Autorización (RBAC):** Middleware que intercepta todas las peticiones para validar credenciales y restringir acciones clínicas solo al rol de Veterinario (EC-02).
-2. **Auditoría Inmutable (Audit Logging):** Módulo transversal que registra automáticamente autor, fecha/hora, recurso y motivo ante cada creación o modificación (EC-02, EC-04).
-3. **Manejo Global de Excepciones y Transacciones:** Interceptor que captura fallos no controlados, ejecuta rollback de transacciones SQL y retorna respuestas estandarizadas con pantallas de mantenimiento degradado (EC-03).
+#### 5.3.2 Capas en la API clínica
 
+Se usan tres capas, más aspectos transversales:
+
+| Capa | Responsabilidad | Componentes |
+|---|---|---|
+| Presentación | Recibir solicitudes y devolver respuestas JSON | Controladores REST |
+| Servicios | Reglas de los procesos clínicos | Servicio de registro clínico, Servicio de consulta de historial, Servicio de prescripciones y alertas, Servicio de referencias, Validación de registros clínicos |
+| Datos e integración | Acceso a la base y al sistema externo | Acceso a datos, Adaptador de OMIA |
+
+La guía menciona una capa de dominio separada. Aquí la lógica de dominio (versionado, alertas) vive en la capa de servicios, porque el dominio es chico y una capa más agregaría indirección sin ganar nada (R5). Es un sacrificio consciente de modificabilidad a cambio de simplicidad.
+
+**Comprobación de restricciones (Tabla 6):**
+
+| Restricción o regla | ¿Se cumple? | Evidencia |
+|---|---|---|
+| Una capa no depende de las superiores | Sí | Ninguna flecha sube |
+| Cada capa usa solo a la inmediatamente inferior | Sí | Controladores → Servicios → Acceso a datos y Adaptador de OMIA; no se saltea ninguna capa |
+| Cada capa tiene una responsabilidad | Sí | Ver tabla anterior |
+| Todas las flechas entre capas van hacia abajo | Sí | Los aspectos transversales son usados desde cualquier capa y no forman parte de la jerarquía |
+
+#### 5.3.3 MVC en la Interfaz web
+
+| Rol MVC | Componente | Responsabilidad |
+|---|---|---|
+| Vista | Vistas | Muestra el estado del modelo: pantallas, errores por campo y confirmaciones |
+| Controlador | Controladores de pantalla | Interpreta las acciones del usuario y actualiza el modelo |
+| Modelo | Modelo de formulario | Conserva lo ingresado, los errores y el contexto del paciente |
+| Apoyo | Cliente de la API | Envía las solicitudes al servidor |
+
+| Restricción o regla (Tabla 6) | ¿Se cumple? | Evidencia |
+|---|---|---|
+| El modelo no conoce a la vista ni al controlador | Sí | El modelo solo notifica cambios |
+| La vista no modifica el modelo directamente | Sí | La vista notifica acciones al controlador |
+| El controlador interpreta acciones y actualiza el modelo | Sí | Flecha «Actualiza» |
+
+#### 5.3.4 Primera versión de la vista de componentes
+
+**API clínica:**
+
+```mermaid
+C4Component
+    title Componentes de la API clínica (versión 1)
+    Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Cliente de la API")
+    ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos")
+    System_Ext(omia, "Base de Datos Externa OMIA", "Catálogo de enfermedades hereditarias")
+    Container_Boundary(api, "API clínica") {
+        Component(ctrl, "Controladores REST", "Rutas Flask", "Presentación: reciben solicitudes y devuelven respuestas JSON")
+        Component(aut, "Autenticación y autorización", "Middleware", "Transversal: identifica al usuario y verifica rol y autoría")
+        Component(aud, "Auditoría", "Python", "Transversal: registra quién hizo qué y cuándo")
+        Component(exc, "Gestión de excepciones", "Manejador global", "Transversal: traduce los fallos en respuestas controladas")
+        Component(salud, "Chequeo de salud", "Ruta de estado", "Transversal: informa si la base responde")
+        Component(reg, "Servicio de registro clínico", "Python", "Servicios: registra consultas, vacunas, patologías y procedimientos y corrige entradas con versionado")
+        Component(hist, "Servicio de consulta de historial", "Python", "Servicios: arma el historial unificado y la evolución del peso")
+        Component(presc, "Servicio de prescripciones y alertas", "Python", "Servicios: registra tratamientos y evalúa interacciones con reglas propias")
+        Component(ref, "Servicio de referencias", "Python", "Servicios: busca patologías de referencia")
+        Component(val, "Validación de registros clínicos", "Python", "Servicios: verifica formatos y rangos y arma los errores por campo")
+        Component(datos, "Acceso a datos", "Python y SQL", "Datos: consultas y transacciones")
+        Component(adap, "Adaptador de OMIA", "Cliente HTTP", "Datos e integración: traduce las respuestas de OMIA al modelo propio")
+    }
+    Rel(web, ctrl, "Solicita", "JSON/HTTPS")
+    Rel(ctrl, aut, "Verifica permisos")
+    Rel(ctrl, reg, "Invoca")
+    Rel(ctrl, hist, "Invoca")
+    Rel(ctrl, presc, "Invoca")
+    Rel(ctrl, ref, "Invoca")
+    Rel(reg, val, "Valida")
+    Rel(presc, val, "Valida")
+    Rel(reg, aud, "Registra cambios")
+    Rel(aut, aud, "Registra rechazos")
+    Rel(reg, datos, "Guarda versiones")
+    Rel(hist, datos, "Lee historial")
+    Rel(presc, datos, "Lee y guarda tratamientos")
+    Rel(aud, datos, "Guarda registros")
+    Rel(salud, datos, "Comprueba la base")
+    Rel(ref, adap, "Busca referencias")
+    Rel(adap, omia, "Consulta patologías", "HTTPS")
+    Rel(datos, bd, "Lee y escribe", "SQL")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+La «Gestión de excepciones» actúa de forma global sobre las respuestas de todos los controladores (es un manejador del framework); por eso no se dibuja una flecha desde cada componente.
+
+**Interfaz web:**
+
+```mermaid
+C4Component
+    title Componentes de la Interfaz web (versión 1)
+    Person(vet, "Médico/a Veterinario/a", "Usuario clínico")
+    Container(api, "API clínica", "Python / Flask", "Servidor de los procesos clínicos")
+    Container_Boundary(web, "Interfaz web") {
+        Component(vista, "Vistas", "HTML y CSS", "Muestran el estado del modelo: pantallas, errores por campo y confirmaciones")
+        Component(ctl, "Controladores de pantalla", "JavaScript", "Interpretan las acciones del usuario y actualizan el modelo")
+        Component(mod, "Modelo de formulario", "JavaScript", "Conserva lo ingresado, los errores por campo y el contexto del paciente")
+        Component(cli, "Cliente de la API", "JavaScript", "Envía las solicitudes al servidor")
+    }
+    Rel(vet, vista, "Interactúa con")
+    Rel(vista, ctl, "Notifica acciones")
+    Rel(ctl, mod, "Actualiza")
+    Rel(mod, vista, "Notifica cambios")
+    Rel(ctl, cli, "Pide enviar")
+    Rel(cli, api, "Envía solicitudes", "JSON/HTTPS")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+**Trazabilidad de componentes** (ningún componente queda huérfano):
+
+| Componente | Contenedor | Se rastrea a |
+|---|---|---|
+| Vistas | Interfaz web | Pantallas del TP2 para HU-01, HU-02 y HU-03 · `DA-02` |
+| Controladores de pantalla | Interfaz web | HU-01, HU-02, HU-03 · `DA-02` |
+| Modelo de formulario | Interfaz web | HU-01 («sin perder la información cargada») · `EC-01` · `DA-02` |
+| Cliente de la API | Interfaz web | Comunicación cliente-servidor · `DA-01` |
+| Controladores REST | API clínica | Interfaz de todos los CU · `DA-01` |
+| Autenticación y autorización | API clínica | RF-08, precondición de CU-01 · `EC-02` · `DA-03` |
+| Auditoría | API clínica | `EC-04`, `EC-02` · `DA-06` |
+| Gestión de excepciones | API clínica | CU-01 slice E1 · `EC-03` · `DA-05` |
+| Chequeo de salud | API clínica | `EC-03` · `DA-05` |
+| Servicio de registro clínico | API clínica | RF-01 a RF-05, RF-08 · HU-01, HU-02 · `DA-06` |
+| Servicio de consulta de historial | API clínica | RF-07, RF-12 · CU-02 |
+| Servicio de prescripciones y alertas | API clínica | RF-06 · HU-03 · `DA-08` |
+| Servicio de referencias | API clínica | RF-09 · CU-01 slice A3 |
+| Validación de registros clínicos | API clínica | RF-10, RF-11 · HU-01 · `EC-01` |
+| Acceso a datos | API clínica | Todos los procesos · `EC-03`, `EC-04` · `DA-04` |
+| Adaptador de OMIA | API clínica | RF-09 · `EC-05` · `DA-07` |
 ---
 
-### 5.4 Tabla de Cobertura de Drivers y Sacrificios
+### 5.4 Aspectos transversales
 
-| Driver (TP2) | Atributo | Cómo lo cubre la arquitectura | Qué sacrifica |
-| :--- | :--- | :--- | :--- |
-| **EC-01** (Operabilidad) | Usabilidad | DTOs de consulta atómicos, conservación de estado de formulario en el cliente y respuestas de error con enlaces directos (`#id`). | Ligero incremento de código de validación duplicado entre cliente y servidor. |
-| **EC-02** (Integridad) | Seguridad | Middleware de autorización RBAC en la Capa de Presentación del Backend que valida rol y recurso en cada solicitud. | Latencia adicional en cada petición HTTP por la comprobación de permisos. |
-| **EC-03** (Recuperación) | Fiabilidad | Transacciones SQL ACID en la Capa de Persistencia, manejador global de excepciones con rollback y esquema WAL/PITR. | Sobrecosto de almacenamiento en disco por conservación de logs de transacciones. |
-| **EC-04** (Responsabilidad) | Seguridad | Modelo de datos de consulta inalterable (versionado append-only) y módulo de auditoría en la Capa de Persistencia. | Mayor volumen de filas en la base de datos (se conservan todas las versiones). |
-| **EC-05** (Modificabilidad) | Mantenibilidad | Componente de integración aislado (`ServicioIntegracionOMIA`) en la Capa de Infraestructura. | Ligera duplicación de DTOs para adaptar las respuestas JSON externas al modelo interno. |
+Son decisiones que atraviesan varias partes del sistema y no pertenecen a una sola. En la vista de componentes se dibujan como componentes propios que usan los demás. Se analizaron los seis que menciona la guía:
 
+| Aspecto | Decisión | Motivo | Dónde se ve |
+|---|---|---|---|
+| Autenticación y autorización | **Adoptado** | `EC-02` y `EC-04`; RF-08 exige validación por rol y HU-02 pide autoría. El mecanismo concreto (sesión o token firmado) se define en el TP4 y no cambia la estructura | Componente «Autenticación y autorización» |
+| Auditoría | **Adoptado** | `EC-04` (correcciones) y `EC-02` (intentos rechazados) | Componente «Auditoría» y esquema de auditoría en la base |
+| Gestión de excepciones | **Adoptado** | `EC-03` (degradación controlada) y `EC-01` (respuestas de error por campo) | Componente «Gestión de excepciones» |
+| Instrumentación | **Adoptado en versión mínima** (estado de la base y registro de eventos) | `EC-03`: detectar rápido la caída forma parte del RTO. Se descarta un sistema de monitoreo con paneles y alertas (R4, R5) | Componente «Chequeo de salud» |
+| Interoperabilidad | **Adoptado como convención**, sin componente propio | Táctica «Respetar estándares de comunicación»: REST, JSON y HTTPS entre contenedores; da contrato estable a `EC-05` | Rótulos de las relaciones entre contenedores |
+| Notificaciones | **Descartado** | Ninguna HU ni RF del proceso elegido exige avisar fuera de la pantalla (la alerta de HU-03 es visual). Los recordatorios del DFD pertenecen a los procesos 1 y 3. Se retoma en el incremento administrativo y requerirá un servicio de correo externo | — |
+---
+
+### 5.5 Verificación
+
+#### 5.5.1 Tabla de cobertura
+
+| Driver | Cómo lo cubre la arquitectura | Qué sacrifica | Estado |
+|---|---|---|---|
+| `EC-01` | «Modelo de formulario» conserva lo ingresado y «Validación de registros clínicos» devuelve todos los errores por campo en una respuesta (`DA-02`) | Parte de la validación queda duplicada (controles básicos en el cliente y validación autoritativa en el servidor); hay que rehacer como HTML estático y JavaScript las plantillas del TP2. El tiempo de 45 s depende además del diseño de pantalla del TP2 y se comprueba con pruebas de uso | Cubierto |
+| `EC-02` | Toda escritura pasa por «Autenticación y autorización» en el servidor, y la base es inaccesible desde fuera (`DA-03`) | Latencia de milisegundos por verificación; el servidor es punto único de falla; hay que gestionar usuarios y roles, que no figuran como proceso en el DFD | Cubierto |
+| `EC-03` | Transacciones, «Almacén de respaldos» con restauración a un instante previo, «Gestión de excepciones» y «Chequeo de salud» (`DA-04`, `DA-05`) | Hasta 4 h sin servicio (no hay conmutación automática); costo de almacenamiento; tarea operativa de probar la restauración en cada etapa; la base es punto único de falla | Cubierto, con sacrificio asumido |
+| `EC-04` | Historial solo-agregar, auditoría en esquema separado y misma transacción (`DA-06`) | La base crece con cada versión; obtener el «estado vigente» exige elegir la última versión (vista o índice) | Cubierto |
+| `EC-05` | «Adaptador de OMIA» detrás de una interfaz estable y reglas de dependencia de las capas (`DA-07`, `DA-08`) | Mapeo de datos entre el formato de OMIA y el modelo propio; sin plug-ins, reemplazar OMIA requiere escribir un adaptador; la regla «0 módulos fuera del adaptador» exige disciplina de revisión | Cubierto |
+
+#### 5.5.2 Conflictos entre tácticas de escenarios distintos
+
+| Conflicto | Escenarios | Análisis | Resolución |
+|---|---|---|---|
+| El versionado de `EC-04` agranda la base, y con ello los respaldos y el tiempo de restauración de `EC-03` | `EC-04` y `EC-03` | Cada corrección suma filas; el RTO de 4 h es holgado para el volumen de una clínica | Se acepta; se revisa el volumen en la prueba de restauración de cada etapa |
+| Si la base está caída (`EC-03`), no se pueden registrar en ella los intentos rechazados de `EC-02` | `EC-02` y `EC-03` | La auditoría vive en la propia base | Registro de respaldo en un archivo local de solo agregar, que se concilia al volver la base; con la base caída el límite de ≤ 1 s no se garantiza (sacrificio asumido) |
+| La auditoría en la misma transacción que la escritura (`EC-04`) suma una inserción por operación | `EC-04` y `EC-01` | Costo de milisegundos frente a una medida de 45 s | Se acepta |
+| La verificación de permisos en cada petición (`EC-02`) suma latencia | `EC-02` y `EC-01` | Mismo orden de magnitud que el anterior | Se acepta |
+| Validar en el cliente y en el servidor duplica reglas (`EC-01`), lo que cuesta modificabilidad (`EC-05`) | `EC-01` y `EC-05` | Cada regla duplicada hay que mantenerla en dos lugares | El servidor es la autoridad; el cliente solo hace controles básicos (campo obligatorio, número) |
+| El versionado (`EC-04`) contradice la redacción de HU-02, que dice «actualiza el registro» | `EC-04` y HU-02 | Para el usuario el efecto es el mismo: ve la entrada corregida con el indicador de modificada | Se interpreta «actualizar» como «agregar una versión nueva»; se recomienda ajustar la redacción de HU-02 |
+
+Por la regla de prioridad (4.4), cuando el conflicto es real prevalecen la integridad y la trazabilidad.
+
+#### 5.5.3 Riesgos arquitectónicos
+
+| ID | Riesgo | Mitigación |
+|---|---|---|
+| RA-1 | La base compartida acopla a la API clínica y al módulo administrativo: un cambio de esquema rompe al otro | Cada aplicación es dueña de sus tablas; los cambios de esquema se acuerdan y se hacen con migraciones |
+| RA-2 | OMIA puede no ofrecer una API estable (R3) | Adaptador aislado y consulta opcional, fuera del camino crítico; confirmar la forma de acceso antes del TP4 |
+| RA-3 | `DA-02` obliga a rehacer las pantallas del TP2 como HTML estático con JavaScript | Reutilizar el diseño visual; si el grupo prefiere mantener plantillas del servidor, ver la alternativa A en `DA-02` |
+| RA-4 | Configurar el archivo continuo del registro de transacciones y la restauración exige práctica operativa | Probar la restauración al menos una vez por etapa (`EC-03`) |
+| RA-5 | Dos aplicaciones servidor con su propia autenticación pueden divergir | Una única tabla de usuarios y roles en la base central, usada por ambas |
 ---
 
 ## 6. Vista de Contenedores (C4 - Nivel 2)
@@ -546,69 +709,142 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
 
 ---
 
-## 9. Decisiones de Arquitectura (ADRs / DAs)
+## 9. Decisiones de arquitectura
 
-### DA-01 — Guardado por Etapas y Preservación de Estado de Formulario en Cliente
-- **Escenario que la motiva:** `EC-01` (Operabilidad en Urgencia Clínica).
-- **Contexto:** En urgencias con tablets, un error de validación que borre el formulario obliga a cargar todo de nuevo, perdiendo tiempo crítico.
-- **Decisión:**
-  - *Tácticas:* Iniciativa del sistema / Mantener modelo de tarea; Acotar tiempos de ejecución.
-  - *Estilo/Patrón:* Arquitectura en Capas / Manejo de DTOs en Cliente y Controlador.
-  - *Dónde aplica:* `Aplicación Web Frontend` y `Controlador de Consultas`.
-- **Alternativas Descartadas:** Guardado automático continuo en servidor vía WebSockets (descartado por sobrecargas de red y complejidad innecesaria).
-- **Consecuencias:**
-  - *Positivas:* 0% de pérdida de datos ante error de validación, carga rápida en ≤ 45 s.
-  - *Negativas / Sacrificios:* Duplicación ligera de validaciones en cliente y servidor.
+### DA-01 — Cliente-servidor como estilo base, con el servidor organizado en capas
 
-### DA-02 — Autorización Centralizada en Servidor mediante RBAC
-- **Escenario que la motiva:** `EC-02` (Petición de Modificación que Saltea la Interfaz).
-- **Contexto:** Ocultar botones en la interfaz no impide que usuarios no clínicos envíen peticiones HTTP directas con herramientas como Postman.
+- **Escenario que la motiva:** `EC-02` (control centralizado de la autorización) y `EC-05` (capas); restricciones R1, R2, R4, R5.
+- **Contexto:** hay que elegir la estructura general del sistema. El equipo es de tres personas, tiene un cuatrimestre y domina aplicaciones web cliente-servidor.
 - **Decisión:**
-  - *Tácticas:* Identificar, autenticar y autorizar actores; Limitar acceso; Registro de auditoría.
-  - *Estilo/Patrón:* Tuberías y Filtros (Middleware RBAC en Capa de Presentación).
-  - *Dónde aplica:* `Middleware Auth & RBAC` en `Backend API REST`.
-- **Alternativas Descartadas:** Validar permisos dentro de procedimientos almacenados de base de datos (descartado por acoplar la seguridad al motor de persistencia).
+  - Tácticas: identificar, autenticar y autorizar actores (control centralizado); restringir dependencias.
+  - Estilo: cliente-servidor como base, para todo el sistema.
+  - Patrón: capas dentro de la API clínica.
+- **Alternativas consideradas:**
+  - Microservicios — descartada: ningún escenario exige escalar o desplegar por separado y suman complejidad operativa (R4, R5).
+  - Orientada a eventos como base — descartada: no hay tareas lentas ni picos que la justifiquen.
 - **Consecuencias:**
-  - *Positivas:* 100% de peticiones no autorizadas rechazadas en el punto de entrada del Backend.
-  - *Negativas / Sacrificios:* Pequeña latencia adicional en cada petición HTTP.
+  - A favor: control centralizado de seguridad; pocas piezas que operar; fácil de hacer evolucionar con la incorporación de nuevos contenedores.
+  - En contra: el servidor es punto único de falla; la carga se centraliza.
+- **Elementos afectados:** «Interfaz web», «API clínica» y «Módulo administrativo».
 
-### DA-03 — Persistencia Transaccional con Estrategia de Respaldos WAL y PITR
-- **Escenario que la motiva:** `EC-03` (Caída de la Base de Datos en Plena Jornada).
-- **Contexto:** La pérdida de datos por corrupción o falla de hardware paraliza la clínica y destruye historiales legales.
-- **Decisión:**
-  - *Tácticas:* Transacciones ACID; Rollback; Manejo de excepciones; Redundancia pasiva.
-  - *Estilo/Patrón:* Repositorio Relacional (PostgreSQL ORM).
-  - *Dónde aplica:* `Repositorio de Persistencia ORM` y `Base de Datos PostgreSQL`.
-- **Alternativas Descartadas:** Base de datos NoSQL sin soporte de transacciones complejas ACID.
-- **Consecuencias:**
-  - *Positivas:* Garantiza RPO ≤ 15 min y 0 registros huérfanos tras la restauración.
-  - *Negativas / Sacrificios:* Sobrecosto de espacio en disco para almacenar logs de transacciones WAL.
+### DA-02 — Interfaz web liviana con patrón MVC y errores de validación por campo
 
-### DA-04 — Modelo de Historial Clínico Inalterable (Append-Only) y Log de Auditoría Separado
-- **Escenario que la motiva:** `EC-04` (Corrección de una Entrada Histórica).
-- **Contexto:** Las historias clínicas son documentos médico-legales. Sobrescribir registros invalida la responsabilidad profesional.
+- **Escenario que la motiva:** `EC-01` (HU-01: «sin perder la información cargada»; CU-01, slice E1).
+- **Contexto:** el veterinario carga datos con urgencia; un error de validación no puede borrar lo ingresado ni obligar a corregir de a un error por vez.
 - **Decisión:**
-  - *Tácticas:* Registro de auditoría; Separar entidades / Versionado Inalterable.
-  - *Estilo/Patrón:* Modelo de Persistencia Versionada + Componente Transversal de Auditoría.
-  - *Dónde aplica:* `Servicio de Historial Clínico`, `Componente de Auditoría` y `PostgreSQL`.
-- **Alternativas Descartadas:** Sobrescribir el registro con `UPDATE` y guardar una copia plana en texto.
+  - Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga.
+  - Estilo: cliente-servidor (el cliente inicia siempre; el servidor expone una interfaz REST definida).
+  - Patrón: MVC en la «Interfaz web». La validación autoritativa está en el servidor, que responde con todos los errores por campo.
+- **Alternativas consideradas:**
+  - **A. Páginas generadas en el servidor con plantillas (la forma de los maquetados del TP2)** — descartada por ahora, es la alternativa más fuerte: reutiliza el trabajo del TP2 y evita duplicar validaciones. Se descarta porque mezcla presentación y servicios en un mismo proceso y porque el estilo pide que el servidor exponga una interfaz definida y reutilizable por los demás clientes (el módulo administrativo y un futuro acceso del tutor). **Esta es la decisión que más conviene que el grupo discuta y confirme.**
+  - B. Aplicación de una página con un framework de enlace de datos (MVVM) — descartada: curva de aprendizaje y complejidad desproporcionadas para el equipo (R4).
+  - C. Guardado automático continuo de borradores en el servidor — descartada: agrega estado en el servidor y complejidad sin un escenario que lo exija.
 - **Consecuencias:**
-  - *Positivas:* 100% de las ediciones son auditables y reconstruibles cronológicamente.
-  - *Negativas / Sacrificios:* Incremento constante en el volumen de filas guardadas en la base de datos.
+  - A favor: no se pierde lo cargado ante un error; el servidor es la única autoridad de validación.
+  - En contra: controles básicos duplicados en el cliente; hay que rehacer las plantillas del TP2 como HTML estático con JavaScript.
+- **Elementos afectados:** «Vistas», «Controladores de pantalla», «Modelo de formulario» y «Cliente de la API» (Interfaz web); «Validación de registros clínicos» y «Controladores REST» (API clínica).
 
-### DA-05 — Encapsulamiento de Servicios Externos en la Capa de Infraestructura
-- **Escenario que la motiva:** `EC-05` (Cambio de Formato o Reemplazo de OMIA).
-- **Contexto:** OMIA es un servicio de terceros cuyo formato JSON o disponibilidad puede cambiar sin control del equipo.
+### DA-03 — Autorización centralizada en el servidor, por rol y por recurso
+
+- **Escenario que la motiva:** `EC-02`; RF-08 y HU-02.
+- **Contexto:** ocultar un botón en la interfaz no impide que un usuario con rol limitado envíe una petición directa al servidor.
 - **Decisión:**
-  - *Tácticas:* Encapsular; Restringir dependencias.
-  - *Estilo/Patrón:* Arquitectura en Capas (Componente dedicado en Capa de Infraestructura).
-  - *Dónde aplica:* `ServicioIntegracionOMIA` en la Capa de Infraestructura/Integración.
-- **Alternativas Descartadas:**
-  1. Patrón Hexagonal con abstracción de Puertos/Adaptadores (descartado por recomendación del equipo/docentes para evitar abstracciones complejas innecesarias para un solo vademécum).
-  2. Invocaciones HTTP directas a OMIA desde los servicios de aplicación (descartado por acoplar el dominio al JSON externo).
+  - Tácticas: identificar, autenticar y autorizar actores; limitar acceso; limitar exposición; cifrar datos; registro de auditoría de los rechazos.
+  - Estilo: cliente-servidor (control centralizado).
+  - Patrón: capas; la verificación se ejecuta antes de cualquier servicio y se implementa como aspecto transversal.
+- **Alternativas consideradas:**
+  - Autorizar solo en la interfaz — descartada: se elude con una petición directa.
+  - Autorizar dentro de la base de datos (reglas o procedimientos almacenados) — descartada como mecanismo principal: acopla la seguridad al motor y complica las pruebas; se usan los permisos de la base solo como defensa adicional para la auditoría (`DA-06`).
+  - Un intermediario de acceso (*gateway*) dedicado — descartada: un contenedor más sin un escenario que lo exija (R5).
 - **Consecuencias:**
-  - *Positivas:* Cambios en la API de OMIA se resuelven en ≤ 2 días modificando un único módulo de integración, manteniendo la lógica simple y directa.
-  - *Negativas / Sacrificios:* Requiere mapear la respuesta externa al objeto de datos interno.
+  - A favor: 100 % de las peticiones no autorizadas rechazadas en un único punto.
+  - En contra: latencia de milisegundos por petición; hay que gestionar usuarios y roles (no figuran como proceso en el DFD).
+- **Elementos afectados:** «Autenticación y autorización», «Controladores REST», «Auditoría», «Base de datos central».
+
+### DA-04 — Base de datos central compartida con transacciones (estilo repositorio) y módulo administrativo como caja negra
+
+- **Escenario que la motiva:** `EC-03` y `EC-04`; R9 y DFD Nivel 1.
+- **Contexto:** los procesos del DFD se relacionan solo por almacenes de datos y hay que poder agregar el módulo administrativo en otra etapa sin tocar el clínico. Se necesita un único lugar donde se apliquen transacciones, permisos y auditoría.
+- **Decisión:**
+  - Tácticas: transacciones; rollback; limitar acceso.
+  - Estilo: repositorio, aplicado solo a la zona de datos.
+  - Patrón: ninguno en este contenedor. Dentro de la API clínica, «Acceso a datos» ejecuta las transacciones.
+- **Alternativas consideradas:**
+  - Una base por módulo — descartada: ningún escenario exige aislar los datos, duplicaría la información de pacientes y complicaría la consistencia.
+  - Que la API clínica y el módulo administrativo se llamen directamente — descartada: rompe el estilo repositorio y los acopla.
+  - Una base sin transacciones completas — descartada: no garantiza «0 registros huérfanos».
+- **Consecuencias:**
+  - A favor: consistencia e integridad; módulos desacoplados; se puede agregar el administrativo después.
+  - En contra: punto único de falla; acoplamiento por esquema compartido; el esquema debe estar documentado y acordado.
+- **Elementos afectados:** «Base de datos central», «Módulo administrativo», «Acceso a datos».
+
+### DA-05 — Respaldos con restauración a un instante previo y degradación controlada
+
+- **Escenario que la motiva:** `EC-03`.
+- **Contexto:** la base puede caer o corromperse en plena jornada y una consulta no se puede volver a hacer. La clínica no tiene sistema alternativo.
+- **Decisión:**
+  - Tácticas: redundancia de repuesto (copia base más archivo continuo del registro de transacciones); detección de excepciones; ping y eco; manejo de excepciones; degradación controlada; comprobación de consistencia posterior a la restauración.
+  - Estilo: repositorio (el almacén de respaldos es una copia pasiva del almacén central).
+  - Patrón: ninguno; la «Gestión de excepciones» y el «Chequeo de salud» son aspectos transversales de la API clínica.
+- **Alternativas consideradas:**
+  - Réplica en caliente con conmutación automática — descartada: un RTO de 4 h no la exige y duplica infraestructura (R5, R7).
+  - Respaldo completo nocturno solamente — descartada: el RPO sería de hasta 24 h, contra un objetivo de 15 min.
+  - Sin degradación controlada — descartada: mostraría errores confusos y el usuario podría creer que se guardó lo que no se guardó.
+- **Consecuencias:**
+  - A favor: RPO ≤ 15 min y 0 registros huérfanos tras verificar; aviso claro de mantenimiento.
+  - En contra: hasta 4 h sin servicio; costo de almacenamiento; la restauración debe probarse en cada etapa.
+- **Elementos afectados:** «Almacén de respaldos», «Base de datos central», «Gestión de excepciones», «Chequeo de salud», «Modelo de formulario».
+
+### DA-06 — Historial versionado inmutable y auditoría en esquema separado
+
+- **Escenario que la motiva:** `EC-04` (también `EC-02`).
+- **Contexto:** la historia clínica tiene valor profesional; poder editarla sin rastro equivale a poder reescribirla.
+- **Decisión:**
+  - Tácticas: registro de auditoría; separar entidades; identificar y autorizar actores; versionado inmutable (propia del grupo); transacciones.
+  - Estilo: repositorio (permisos y auditoría centralizados).
+  - Patrón: aspecto transversal «Auditoría» usado por el «Servicio de registro clínico». La versión nueva y el registro de auditoría se confirman en la misma transacción.
+- **Alternativas consideradas:**
+  - Sobrescribir el registro y guardar una copia aparte — descartada: la copia puede perderse o alterarse y no hay cadena de versiones.
+  - Firma digital por registro — descartada: costo desproporcionado (R4).
+  - Auditoría en un servicio externo — descartada: sumaría un contenedor sin escenario que lo exija.
+- **Consecuencias:**
+  - A favor: 100 % de las ediciones reconstruibles; la aplicación no puede editar ni borrar la auditoría.
+  - En contra: la base crece con cada versión; consultar el estado vigente exige elegir la última versión.
+  - Impacto en el TP1: el modelo de dominio debería reflejar versiones enlazadas de las entradas clínicas y un registro de auditoría.
+- **Elementos afectados:** «Servicio de registro clínico», «Auditoría», «Acceso a datos», «Base de datos central».
+
+### DA-07 — Integración con OMIA encapsulada en un adaptador
+
+- **Escenario que la motiva:** `EC-05`; RF-09.
+- **Contexto:** OMIA es un servicio de terceros cuyo formato o disponibilidad puede cambiar sin control del equipo (R3). La consulta es opcional y de solo lectura.
+- **Decisión:**
+  - Tácticas: encapsular; usar un intermediario; restringir dependencias; dividir módulos; abstraer fuentes de datos (para pruebas).
+  - Estilo: cliente-servidor (la API clínica actúa como cliente de OMIA).
+  - Patrón: capas; el «Adaptador de OMIA» está en la capa de datos e integración, detrás de una interfaz estable.
+- **Alternativas consideradas:**
+  - Patrón hexagonal con puertos y adaptadores — descartada: agrega interfaces para un único proveedor (sobreingeniería); el encapsulamiento dentro de capas logra la medida.
+  - Llamar a OMIA directamente desde los servicios — descartada: propagaría el formato externo al dominio.
+  - Plug-ins o configuración del proveedor — descartada: hay un único proveedor.
+- **Consecuencias:**
+  - A favor: un cambio de OMIA se resuelve tocando un solo módulo, en ≤ 2 días; la regresión de CU-01 no depende de OMIA.
+  - En contra: hay que mapear la respuesta externa al modelo propio.
+- **Elementos afectados:** «Servicio de referencias», «Adaptador de OMIA» y el sistema externo OMIA.
+
+### DA-08 — Alertas de interacción con reglas propias; OMIA solo como referencia
+
+- **Escenario que la motiva:** `EC-05` (acotar la dependencia externa); HU-03 y CU-03, slice A1.
+- **Contexto:** CU-03 pide que el sistema valide «reglas de negocio» sobre la medicación activa del paciente, mientras que OMIA es un catálogo de rasgos y enfermedades hereditarias, sin datos de interacciones entre fármacos. Una función de seguridad clínica no debe depender de un servicio externo que no se controla.
+- **Decisión:**
+  - Tácticas: encapsular; restringir dependencias.
+  - Estilo: cliente-servidor; datos de las reglas en la base central.
+  - Patrón: capas; el «Servicio de prescripciones y alertas» evalúa las reglas leyendo la medicación activa y una tabla de reglas de interacción propia.
+- **Alternativas consideradas:**
+  - Validar las interacciones consultando OMIA — descartada: OMIA no contiene esa información y haría depender la alerta de un servicio ajeno.
+  - Un vademécum externo de interacciones — descartada: fuera del alcance del TP1 (sin API definida) y sumaría otro sistema externo.
+- **Consecuencias:**
+  - A favor: la alerta funciona aunque OMIA falle; OMIA queda como consulta opcional (RF-09).
+  - En contra: el equipo debe mantener las reglas de interacción; el modelo de dominio necesita una entidad para ellas.
+- **Elementos afectados:** «Servicio de prescripciones y alertas», «Acceso a datos», «Base de datos central».
 
 ---
 
