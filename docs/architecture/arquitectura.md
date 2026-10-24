@@ -10,9 +10,9 @@ La guía indica que la arquitectura se define para el o los procesos elegidos en
 
 | Proceso del DFD Nivel 1 | ¿En alcance? | Tratamiento en la arquitectura | Requerimientos |
 |---|---|---|---|
-| 1. Gestionar Turnos y Pacientes | No | Caja negra: contenedor «Módulo administrativo» | Fuera del proceso elegido |
+| 1. Gestionar Turnos y Pacientes | No | Caja negra: contenedor «Aplicación administrativa» | Fuera del proceso elegido |
 | 2. Registrar Atención Clínica | **Sí** | Se detalla: «Interfaz web» y «API clínica» | RF-01 a RF-08, RF-10 a RF-12 · CU-01, CU-02, CU-03 · HU-01, HU-02, HU-03 |
-| 3. Gestionar Pagos | No | Caja negra: contenedor «Módulo administrativo» | Fuera del proceso elegido |
+| 3. Gestionar Pagos | No | Caja negra: contenedor «Aplicación administrativa» | Fuera del proceso elegido |
 | 4. Consultar Referencia OMIA | **Sí** | Componente «Adaptador de OMIA» dentro de la API clínica y sistema externo OMIA | RF-09 · CU-01, slice A3 |
 
 ### 1.3 Audiencia
@@ -161,7 +161,7 @@ Un escenario que se resuelve dentro de un solo componente o solo en la interfaz 
 | Fuente | Qué aporta |
 |---|---|
 | RF y HU del TP1 | RF-08 («validación exclusiva de rol») y HU-02 («de su autoría») fijan qué debe autorizar el servidor; HU-01 («sin perder la información cargada») respalda `EC-01`; HU-03 y CU-03 definen el servicio de alertas |
-| Restricciones (sección 2) | R4 y R5 inclinan hacia cliente-servidor con capas y descartan microservicios; R9 pide poder agregar el módulo administrativo sin tocar el clínico |
+| Restricciones (sección 2) | R4 y R5 inclinan hacia cliente-servidor con capas y descartan microservicios; R9 pide poder agregar la aplicación administrativa sin tocar el clínico |
 | DFD Nivel 1 | Los procesos 1, 2, 3 y 4 se relacionan solo a través de almacenes de datos (D1 a D4), sin flujos directos entre procesos: es la base del estilo repositorio |
 
 ### 4.4 Prioridad entre drivers
@@ -279,7 +279,7 @@ Un **estilo** es un conjunto de principios que da un marco abstracto para una fa
 | Estilo | ¿Adoptado? | Motivo |
 |---|---|---|
 | Cliente-servidor | **Sí: estilo base** | `EC-02` pide control centralizado de la autorización en el servidor; R1, R2, R4 y R5 favorecen una estructura con pocas piezas que el equipo ya conoce |
-| Repositorio | **Sí: estilo adicional, solo para la zona de datos** | `EC-03` (transacciones sobre un almacén central) y `EC-04` (permisos y auditoría centralizados). Además, en el DFD Nivel 1 los procesos solo se comunican a través de almacenes de datos, y R9 pide agregar el módulo administrativo sin tocar el clínico |
+| Repositorio | **Sí: estilo adicional, solo para la zona de datos** | `EC-03` (transacciones sobre un almacén central) y `EC-04` (permisos y auditoría centralizados). Además, en el DFD Nivel 1 los procesos solo se comunican a través de almacenes de datos, y R9 pide agregar la aplicación administrativa sin tocar el clínico |
 | Tuberías y filtros | No | El sistema no es un flujo de transformación de datos en etapas. La cadena de verificaciones de una petición dentro de la API es un mecanismo del framework, no el estilo del sistema; declararlo sería combinar por acumulación |
 | Orientada a eventos | No | Ningún escenario exige tareas lentas, picos de carga ni procesamiento diferido. La interrupción de red al guardar (CU-01, slice E1) se resuelve con una transacción atómica y con la conservación de lo cargado en el cliente |
 | Microservicios | No | R4 y R5; ningún escenario exige escalar o desplegar por separado, y `EC-05` se resuelve con encapsulamiento. Sumaría complejidad operativa y consistencia entre bases |
@@ -291,7 +291,7 @@ SOA es arquitectura orientada a servicios.
 #### 5.2.2 Estilo base: cliente-servidor
 
 - **Principio:** el servidor presta servicios a clientes que los solicitan.
-- **Dónde aplica:** a todo el sistema. El cliente es la «Interfaz web»; los servidores son la «API clínica» y el «Módulo administrativo».
+- **Dónde aplica:** a todo el sistema. El cliente es la «Interfaz web»; los servidores son la «API clínica» y el «Aplicación administrativa».
 - **Qué mejora:** seguridad (control centralizado, `EC-02`), simplicidad de operación y de prueba (`EC-05`).
 - **Qué sacrifica:** el servidor es un punto único de falla; la carga se centraliza; el cliente depende de la red.
 - **Comprobación de restricciones (Tabla 4 de la guía), sobre la vista de contenedores v1:**
@@ -308,9 +308,9 @@ SOA es arquitectura orientada a servicios.
 #### 5.2.3 Estilo adicional: repositorio
 
 - **Principio:** los datos compartidos viven en un almacén central que varias aplicaciones consultan y actualizan, y las aplicaciones solo se comunican entre sí a través de ese almacén.
-- **Dónde aplica:** solo a la **zona de datos**: la «Base de datos central» y las dos aplicaciones que la usan, «API clínica» y «Módulo administrativo».
+- **Dónde aplica:** solo a la **zona de datos**: la «Base de datos central» y las dos aplicaciones que la usan, «API clínica» y «Aplicación administrativa».
 - **Por qué responde a escenarios:** `EC-03` y `EC-04` necesitan un único lugar donde se apliquen transacciones, permisos y auditoría. Las dos aplicaciones comparten datos reales (el proceso 2 lee los pacientes y los turnos que escribe el proceso 1, según el DFD Nivel 1), y el almacén central evita que se llamen directamente.
-- **Qué mejora:** consistencia e integridad (transacciones), permisos y auditoría en un único punto, y desacople entre módulos, lo que permite agregar el módulo administrativo en otra etapa (R9).
+- **Qué mejora:** consistencia e integridad (transacciones), permisos y auditoría en un único punto, y desacople entre módulos, lo que permite agregar la aplicación administrativa en otra etapa (R9).
 - **Qué sacrifica:** el almacén es un punto único de falla; el esquema de datos acopla a quienes lo usan; la base puede volverse un cuello de botella al escalar.
 - **Cómo se conectan las zonas:** el estilo cliente-servidor y el repositorio se conectan por la conexión SQL de cada servidor a la base. Es el único punto de integración entre las dos aplicaciones servidor.
 - **No confundir** con el «patrón repositorio» de diseño (clases que encapsulan consultas): acá se habla del estilo, es decir, de un almacén central compartido.
@@ -318,7 +318,7 @@ SOA es arquitectura orientada a servicios.
 
 | Restricción o regla del estilo | ¿Se cumple? | Evidencia en el diagrama |
 |---|---|---|
-| Las aplicaciones no se comunican directamente entre sí | Sí | No hay flecha entre «API clínica» y «Módulo administrativo» |
+| Las aplicaciones no se comunican directamente entre sí | Sí | No hay flecha entre «API clínica» y «Aplicación administrativa» |
 | El almacén es la fuente única de los datos | Sí | El «Almacén de respaldos» es una copia pasiva, no una fuente |
 | El acceso concurrente se controla (transacciones) | Sí | `EC-03`: transacciones en «Acceso a datos» |
 | El esquema de datos es conocido por todos los que lo usan | Sí, a documentar | Modelo de dominio del TP1 (`modelo_de_dominio_inicial.md`) |
@@ -334,7 +334,7 @@ C4Container
     System_Boundary(sis, "VetGestión") {
         Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Presenta las pantallas en el navegador y conserva el estado de los formularios")
         Container(api, "API clínica", "Python / Flask", "Autoriza, valida y aplica las reglas de los procesos clínicos")
-        Container(adm, "Módulo administrativo", "Sin detalle en este TP", "Caja negra: turnos, pacientes, tutores y pagos")
+        Container(adm, "Aplicación administrativa", "Sin detalle en este TP", "Caja negra: turnos, pacientes, tutores y pagos")
         ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos: historial versionado, auditoría y datos administrativos")
         ContainerDb(resp, "Almacén de respaldos", "Copias base y registro de transacciones", "Copias para restaurar la base a un instante previo a la falla")
     }
@@ -351,7 +351,7 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-Los archivos estáticos de la interfaz web los sirve el mismo servidor web que expone la API (detalle de despliegue: TP4). Cada contenedor que existe por una táctica o un estilo se rastrea a una decisión: «Almacén de respaldos» (`DA-05`), «Base de datos central» (`DA-04`) y «Módulo administrativo» (`DA-04`). El catálogo definitivo y la verificación de las reglas 4.4, 4.6 y 4.7 son parte de la Parte B.
+Los archivos estáticos de la interfaz web los sirve el mismo servidor web que expone la API (detalle de despliegue: TP4). Cada contenedor que existe por una táctica o un estilo se rastrea a una decisión: «Almacén de respaldos» (`DA-05`), «Base de datos central» (`DA-04`) y «Aplicación administrativa» (`DA-04`). El catálogo definitivo y la verificación de las reglas 4.4, 4.6 y 4.7 son parte de la Parte B.
 
 
 ---
@@ -368,7 +368,7 @@ Los archivos estáticos de la interfaz web los sirve el mismo servidor web que e
 | API clínica | Broker | No | No hay cola ni tareas diferidas (ver 5.2.1) |
 | Interfaz web | MVC | **Sí** | `EC-01`: separar vista, modelo y controlador permite que el modelo conserve el estado ante errores |
 | Interfaz web | MVVM | No | Requiere un mecanismo de enlace de datos propio de un framework de interfaz, con más complejidad y depuración más difícil; el equipo trabaja con HTML y Python |
-| Módulo administrativo, Base de datos central, Almacén de respaldos | Ninguno en este TP | — | Caja negra o almacenes sin lógica propia |
+| Aplicación administrativa, Base de datos central, Almacén de respaldos | Ninguno en este TP | — | Caja negra o almacenes sin lógica propia |
 | (cualquiera) | Pizarra, Serverless | No | No hay problema sin algoritmo cerrado ni escalado variable que lo justifique |
 
 MVC es Modelo-Vista-Controlador; MVVM, Modelo-Vista-Modelo de Vista; CQRS, separación de comandos y consultas.
@@ -543,7 +543,7 @@ Por la regla de prioridad (4.4), cuando el conflicto es real prevalecen la integ
 
 | ID | Riesgo | Mitigación |
 |---|---|---|
-| RA-1 | La base compartida acopla a la API clínica y al módulo administrativo: un cambio de esquema rompe al otro | Cada aplicación es dueña de sus tablas; los cambios de esquema se acuerdan y se hacen con migraciones |
+| RA-1 | La base compartida acopla a la API clínica y a la aplicación administrativa: un cambio de esquema rompe al otro | Cada aplicación es dueña de sus tablas; los cambios de esquema se acuerdan y se hacen con migraciones |
 | RA-2 | OMIA puede no ofrecer una API estable (R3) | Adaptador aislado y consulta opcional, fuera del camino crítico; confirmar la forma de acceso antes del TP4 |
 | RA-3 | `DA-02` obliga a rehacer las pantallas del TP2 como HTML estático con JavaScript | Reutilizar el diseño visual; si el grupo prefiere mantener plantillas del servidor, ver la alternativa A en `DA-02` |
 | RA-4 | Configurar el archivo continuo del registro de transacciones y la restauración exige práctica operativa | Probar la restauración al menos una vez por etapa (`EC-03`) |
@@ -725,7 +725,7 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
 - **Consecuencias:**
   - A favor: control centralizado de seguridad; pocas piezas que operar; fácil de hacer evolucionar con la incorporación de nuevos contenedores.
   - En contra: el servidor es punto único de falla; la carga se centraliza.
-- **Elementos afectados:** «Interfaz web», «API clínica» y «Módulo administrativo».
+- **Elementos afectados:** «Interfaz web», «API clínica» y «Aplicación administrativa».
 
 ### DA-02 — Interfaz web liviana con patrón MVC y errores de validación por campo
 
@@ -736,7 +736,7 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
   - Estilo: cliente-servidor (el cliente inicia siempre; el servidor expone una interfaz REST definida).
   - Patrón: MVC en la «Interfaz web». La validación autoritativa está en el servidor, que responde con todos los errores por campo.
 - **Alternativas consideradas:**
-  - **A. Páginas generadas en el servidor con plantillas (la forma de los maquetados del TP2)** — descartada por ahora, es la alternativa más fuerte: reutiliza el trabajo del TP2 y evita duplicar validaciones. Se descarta porque mezcla presentación y servicios en un mismo proceso y porque el estilo pide que el servidor exponga una interfaz definida y reutilizable por los demás clientes (el módulo administrativo y un futuro acceso del tutor). **Esta es la decisión que más conviene que el grupo discuta y confirme.**
+  - **A. Páginas generadas en el servidor con plantillas (la forma de los maquetados del TP2)** — descartada por ahora, es la alternativa más fuerte: reutiliza el trabajo del TP2 y evita duplicar validaciones. Se descarta porque mezcla presentación y servicios en un mismo proceso y porque el estilo pide que el servidor exponga una interfaz definida y reutilizable por los demás clientes (la aplicación administrativa y un futuro acceso del tutor). **Esta es la decisión que más conviene que el grupo discuta y confirme.**
   - B. Aplicación de una página con un framework de enlace de datos (MVVM) — descartada: curva de aprendizaje y complejidad desproporcionadas para el equipo (R4).
   - C. Guardado automático continuo de borradores en el servidor — descartada: agrega estado en el servidor y complejidad sin un escenario que lo exija.
 - **Consecuencias:**
@@ -761,22 +761,22 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
   - En contra: latencia de milisegundos por petición; hay que gestionar usuarios y roles (no figuran como proceso en el DFD).
 - **Elementos afectados:** «Autenticación y autorización», «Controladores REST», «Auditoría», «Base de datos central».
 
-### DA-04 — Base de datos central compartida con transacciones (estilo repositorio) y módulo administrativo como caja negra
+### DA-04 — Base de datos central compartida con transacciones (estilo repositorio) y aplicación administrativa como caja negra
 
 - **Escenario que la motiva:** `EC-03` y `EC-04`; R9 y DFD Nivel 1.
-- **Contexto:** los procesos del DFD se relacionan solo por almacenes de datos y hay que poder agregar el módulo administrativo en otra etapa sin tocar el clínico. Se necesita un único lugar donde se apliquen transacciones, permisos y auditoría.
+- **Contexto:** los procesos del DFD se relacionan solo por almacenes de datos y hay que poder agregar la aplicación administrativa en otra etapa sin tocar el clínico. Se necesita un único lugar donde se apliquen transacciones, permisos y auditoría.
 - **Decisión:**
   - Tácticas: transacciones; rollback; limitar acceso.
   - Estilo: repositorio, aplicado solo a la zona de datos.
   - Patrón: ninguno en este contenedor. Dentro de la API clínica, «Acceso a datos» ejecuta las transacciones.
 - **Alternativas consideradas:**
   - Una base por módulo — descartada: ningún escenario exige aislar los datos, duplicaría la información de pacientes y complicaría la consistencia.
-  - Que la API clínica y el módulo administrativo se llamen directamente — descartada: rompe el estilo repositorio y los acopla.
+  - Que la API clínica y la aplicación administrativa se llamen directamente — descartada: rompe el estilo repositorio y los acopla.
   - Una base sin transacciones completas — descartada: no garantiza «0 registros huérfanos».
 - **Consecuencias:**
   - A favor: consistencia e integridad; módulos desacoplados; se puede agregar el administrativo después.
   - En contra: punto único de falla; acoplamiento por esquema compartido; el esquema debe estar documentado y acordado.
-- **Elementos afectados:** «Base de datos central», «Módulo administrativo», «Acceso a datos».
+- **Elementos afectados:** «Base de datos central», «Aplicación administrativa», «Acceso a datos».
 
 ### DA-05 — Respaldos con restauración a un instante previo y degradación controlada
 
