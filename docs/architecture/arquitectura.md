@@ -6,7 +6,7 @@
 El propósito de este documento es especificar la arquitectura de software del **Sistema de Gestión Clínica Veterinaria (VetGestión)**. La arquitectura aquí descripta establece la estructura global del sistema, la división en contenedores y componentes, la selección de estilos y patrones arquitectónicos, las tácticas para satisfacer los requerimientos no funcionales (atributos de calidad) y las decisiones de diseño fundamentales que condicionan el desarrollo.
 
 ### 1.2 Alcance
-La guía indica que la arquitectura se define para el o los procesos elegidos en el TP1 y que el resto del sistema se representa como caja negra. El proceso elegido es **Gestión Clínica e Historial** (`docs/requirements/RF.md` y `slices.md`). En el DFD (diagrama de flujo de datos) de Nivel 1 del TP1 (`docs/architecture/diagrama-de-contexto-dfd.md`) corresponde a los procesos 2 y 4:
+La guía indica que la arquitectura se define para el o los procesos elegidos en el TP1 (trabajo práctico 1) y que el resto del sistema se representa como caja negra. El proceso elegido es **Gestión Clínica e Historial** (`docs/requirements/RF.md` y `slices.md`; RF: requerimiento funcional). En el DFD (diagrama de flujo de datos) de Nivel 1 del TP1 (`docs/architecture/diagrama-de-contexto-dfd.md`) corresponde a los procesos 2 y 4. En la tabla, CU significa caso de uso, HU historia de usuario y OMIA *Online Mendelian Inheritance in Animals* (catálogo de enfermedades y rasgos hereditarios en animales):
 
 | Proceso del DFD Nivel 1 | ¿En alcance? | Tratamiento en la arquitectura | Requerimientos |
 |---|---|---|---|
