@@ -55,7 +55,7 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 
 ## 3. Contexto
 
-E### 3.1 Diagrama de contexto del TP1 (DFD Nivel 0)
+### 3.1 Diagrama de contexto del TP1 (DFD Nivel 0)
 
 Se reproduce sin cambios el diagrama de `docs/architecture/diagrama-de-contexto-dfd.md`:
 
@@ -88,7 +88,9 @@ flowchart LR
 
 ### 3.2 El mismo contexto en notación C4 (nivel 1)
 
-Mismos actores y mismo sistema externo, con los mismos nombres:
+Mismos actores y mismo sistema externo, con los mismos nombres, en notación C4 (Brown, 2020).
+
+En los diagramas: **HTTPS** es HTTP (el protocolo de la web) sobre una conexión cifrada; **JSON**, un formato de texto para intercambiar datos; **SQL**, el lenguaje de las bases de datos relacionales; **API**, la interfaz de programación de aplicaciones; **REST**, un estilo de diseño de APIs sobre HTTP.
 
 ```mermaid
 C4Context
