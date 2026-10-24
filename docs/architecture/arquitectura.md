@@ -350,12 +350,13 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-Los archivos estáticos de la interfaz web los sirve el mismo servidor web que expone la API (detalle de despliegue: TP4). Cada contenedor que existe por una táctica o un estilo se rastrea a una decisión: «Almacén de respaldos» (`DA-05`), «Base de datos central» (`DA-04`) y «Aplicación administrativa» (`DA-04`). El catálogo definitivo y la verificación de las reglas 4.4, 4.6 y 4.7 son parte de la Parte B.
+Los archivos estáticos de la interfaz web los sirve el mismo servidor web que expone la API (detalle de despliegue: TP4). Cada contenedor que existe por una táctica o un estilo se rastrea a una decisión: «Almacén de respaldos» (`DA-05`), «Base de datos central» (`DA-04`) y «Aplicación administrativa» (`DA-04`). El catálogo y la verificación de las reglas 4.4, 4.6 y 4.7 están en la sección 6.
 
 
 ---
 
 ### 5.3 Patrones arquitectónicos (decisión local)
+Un **patrón** es una solución reutilizable a un problema recurrente dentro de un contexto (Buschmann et al., 1996). Responde a «¿cómo resuelvo este problema puntual?» y se aplica a **un contenedor concreto**, no al sistema entero. Se hace visible en la vista de componentes.
 
 #### 5.3.1 Patrones evaluados por contenedor
 
@@ -363,10 +364,10 @@ Los archivos estáticos de la interfaz web los sirve el mismo servidor web que e
 |---|---|---|---|
 | API clínica | Capas | **Sí** | `EC-02` (control en la capa de servicios), `EC-05` (restringir dependencias y encapsular), capacidad de prueba; es lo que el equipo ya domina (R4) |
 | API clínica | Hexagonal | No | Mejora la prueba y el aislamiento de OMIA, pero agrega puertos y adaptadores para un único proveedor (sobreingeniería, Tabla 5). `EC-05` se logra con encapsulamiento dentro de capas |
-| API clínica | CQRS | No | No hay lecturas y escrituras con necesidades de escala distintas; la consistencia eventual entre modelos contradice la trazabilidad de `EC-04` |
+| API clínica | CQRS (separación de comandos y consultas) | No | No hay lecturas y escrituras con necesidades de escala distintas; la consistencia eventual entre modelos contradice la trazabilidad de `EC-04` |
 | API clínica | Broker | No | No hay cola ni tareas diferidas (ver 5.2.1) |
-| Interfaz web | MVC | **Sí** | `EC-01`: separar vista, modelo y controlador permite que el modelo conserve el estado ante errores |
-| Interfaz web | MVVM | No | Requiere un mecanismo de enlace de datos propio de un framework de interfaz, con más complejidad y depuración más difícil; el equipo trabaja con HTML y Python |
+| Interfaz web | MVC (Modelo-Vista-Controlador) | **Sí** | `EC-01`: separar vista, modelo y controlador permite que el modelo conserve el estado ante errores |
+| Interfaz web | MVVM (Modelo-Vista-Modelo de Vista) | No | Requiere un mecanismo de enlace de datos propio de un framework de interfaz, con más complejidad y depuración más difícil; el equipo trabaja con HTML y Python |
 | Aplicación administrativa, Base de datos central, Almacén de respaldos | Ninguno en este TP | — | Caja negra o almacenes sin lógica propia |
 | (cualquiera) | Pizarra, Serverless | No | No hay problema sin algoritmo cerrado ni escalado variable que lo justifique |
 
@@ -374,7 +375,7 @@ MVC es Modelo-Vista-Controlador; MVVM, Modelo-Vista-Modelo de Vista; CQRS, separ
 
 #### 5.3.2 Capas en la API clínica
 
-Se usan tres capas, más aspectos transversales:
+Se usa el patrón de capas (Fowler, 2002) con tres capas, más aspectos transversales:
 
 | Capa | Responsabilidad | Componentes |
 |---|---|---|
@@ -407,6 +408,7 @@ La guía menciona una capa de dominio separada. Aquí la lógica de dominio (ver
 | El modelo no conoce a la vista ni al controlador | Sí | El modelo solo notifica cambios |
 | La vista no modifica el modelo directamente | Sí | La vista notifica acciones al controlador |
 | El controlador interpreta acciones y actualiza el modelo | Sí | Flecha «Actualiza» |
+| La vista muestra el estado del modelo | Sí | Flecha «Notifica cambios» del Modelo de formulario hacia Vistas |
 
 #### 5.3.4 Primera versión de la vista de componentes
 
@@ -434,6 +436,7 @@ C4Component
     }
     Rel(web, ctrl, "Solicita", "JSON/HTTPS")
     Rel(ctrl, aut, "Verifica permisos")
+    Rel(ctrl, exc, "Delega los fallos")
     Rel(ctrl, reg, "Invoca")
     Rel(ctrl, hist, "Invoca")
     Rel(ctrl, presc, "Invoca")
@@ -453,7 +456,7 @@ C4Component
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-La «Gestión de excepciones» actúa de forma global sobre las respuestas de todos los controladores (es un manejador del framework); por eso no se dibuja una flecha desde cada componente.
+Los controladores delegan en «Gestión de excepciones» la traducción de los fallos a respuestas controladas; los servicios solo señalan el error.
 
 **Interfaz web:**
 
