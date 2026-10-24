@@ -268,9 +268,6 @@ Una **táctica** es una decisión de diseño elemental que influye en el logro d
 | Abstraer servicios comunes | No hay otra integración externa que comparta funciones |
 | Redistribuir responsabilidades | No hay una función mal ubicada que corregir |
 
----
-
-### 5.2 Estilos Arquitectónicos
 
 ### 5.2 Estilos arquitectónicos (decisión global)
 
@@ -286,7 +283,7 @@ Un **estilo** es un conjunto de principios que da un marco abstracto para una fa
 | Orientada a eventos | No | Ningún escenario exige tareas lentas, picos de carga ni procesamiento diferido. La interrupción de red al guardar (CU-01, slice E1) se resuelve con una transacción atómica y con la conservación de lo cargado en el cliente |
 | Microservicios | No | R4 y R5; ningún escenario exige escalar o desplegar por separado, y `EC-05` se resuelve con encapsulamiento. Sumaría complejidad operativa y consistencia entre bases |
 | Monolítica | No se declara | La API clínica se despliega como una sola unidad, pero eso es una consecuencia y no un objetivo; su estructura interna se rige por el patrón de capas |
-| Microkernel, SOA y entre pares (*peer-to-peer*) | No | No hay núcleo con extensiones, ni bus de integración, ni nodos iguales |
+| Microkernel, SOA (arquitectura orientada a servicios) y entre pares (*peer-to-peer*) | No | No hay núcleo con extensiones, ni bus de integración, ni nodos iguales |
 
 SOA es arquitectura orientada a servicios.
 
