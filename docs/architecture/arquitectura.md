@@ -552,163 +552,298 @@ Por la regla de prioridad (4.4), cuando el conflicto es real prevalecen la integ
 | RA-5 | Dos aplicaciones servidor con su propia autenticación pueden divergir | Una única tabla de usuarios y roles en la base central, usada por ambas |
 ---
 
-## 6. Vista de Contenedores (C4 - Nivel 2)
+## 6. Vista de contenedores
 
-### 6.1 Diagrama de Contenedores
+### 6.1 Diagrama de contenedores
+
+La vista describe el sistema VetGestión completo. La interfaz web es el cliente; la API clínica y la aplicación administrativa son los servidores; la base de datos central es el almacén compartido.
 
 ```mermaid
 C4Container
-    title Diagrama de Contenedores del Sistema VetGestión (C4 - Nivel 2)
-
-    Person(vet, "Médico/a Veterinario/a", "Usuario clínico en consultorio")
-    Person(sec, "Asistente / Recepcionista", "Usuario administrativo")
-    Person(tutor, "Tutor / Dueño", "Usuario cliente")
-
-    System_Boundary(sysVetBoundary, "Sistema VetGestión") {
-        Container(webApp, "Aplicación Web Frontend", "HTML5, CSS, JS", "Interfaz de usuario responsiva para registro de consultas, historiales y prescripciones.")
-        Container(apiBackend, "Backend API REST", "Python / Flask", "Procesa la lógica de negocio en capas, autorización RBAC, versionado de historial y orquestación.")
-        ContainerDb(dbPostgres, "Base de Datos Relacional", "PostgreSQL", "Almacena historiales versionados, consultas, usuarios y tabla de auditoría inmutable.")
+    title Contenedores de VetGestión
+    Person(vet, "Médico/a Veterinario/a", "Atiende, registra y consulta historiales")
+    Person(sec, "Secretario/a o Recepcionista", "Gestiona turnos, pacientes y pagos")
+    Person(tutor, "Tutor/a de Mascota", "Consulta información de su mascota")
+    System_Boundary(sis, "VetGestión") {
+        Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Presenta las pantallas en el navegador y conserva el estado de los formularios")
+        Container(api, "API clínica", "Python / Flask", "Autoriza, valida y aplica las reglas de los procesos clínicos")
+        Container(adm, "Aplicación administrativa", "Sin detalle en este TP", "Caja negra: turnos, pacientes, tutores y pagos")
+        ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos: historial versionado, auditoría y datos administrativos")
+        ContainerDb(resp, "Almacén de respaldos", "Copias base y registro de transacciones", "Copias para restaurar la base a un instante previo a la falla")
     }
-
-    System_Ext(omnia, "Vademécum Externo OMIA", "Servicio externo REST de compatibilidad de fármacos")
-
-    Rel(vet, webApp, "Usa la interfaz para atender y prescribir", "HTTPS")
-    Rel(sec, webApp, "Usa la interfaz para recepción y turnos", "HTTPS")
-    Rel(tutor, webApp, "Consulta carnet y datos de mascota", "HTTPS")
-
-    Rel(webApp, apiBackend, "Consume servicios REST y envía formularios", "HTTPS / JSON")
-    Rel(apiBackend, dbPostgres, "Lee y escribe historiales, versiones y auditoría", "SQL / TCP 5432")
-    Rel(apiBackend, omnia, "Consulta tabla de interacciones medicamentosas", "HTTPS / REST JSON")
+    System_Ext(omia, "Base de Datos Externa OMIA", "Catálogo de enfermedades y rasgos hereditarios en animales")
+    Rel(vet, web, "Usa", "HTTPS")
+    Rel(sec, web, "Usa", "HTTPS")
+    Rel(tutor, web, "Usa", "HTTPS")
+    Rel(web, api, "Solicita operaciones clínicas", "JSON/HTTPS")
+    Rel(web, adm, "Solicita operaciones administrativas", "JSON/HTTPS")
+    Rel(api, bd, "Lee y escribe", "SQL")
+    Rel(adm, bd, "Lee y escribe", "SQL")
+    Rel(bd, resp, "Archiva copias y transacciones", "Archivos")
+    Rel(api, omia, "Consulta patologías", "HTTPS")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-### 6.2 Catálogo de Contenedores
+### 6.2 Catálogo de contenedores
 
-| Contenedor | Tecnología | Responsabilidad |
-| :--- | :--- | :--- |
-| **Aplicación Web Frontend** | HTML5, CSS3, JavaScript | Renderizar la interfaz de usuario, validar campos locales, conservar estado de borradores y presentar alertas. |
-| **Backend API REST** | Python / Flask | Centralizar la seguridad (RBAC), coordinar la arquitectura en capas, orquestar el versionado de atenciones y consultar OMIA. |
-| **Base de Datos Relacional** | PostgreSQL | Garantizar la persistencia inalterable (append-only) de consultas, aplicar transacciones ACID y resguardar la auditoría. |
+| Contenedor | Tecnología | Responsabilidad | Se rastrea a |
+|---|---|---|---|
+| Interfaz web | HTML, CSS y JavaScript | Presenta las pantallas en el navegador y conserva el estado de los formularios | `EC-01` · `DA-02` · HU-01 a HU-03 |
+| API clínica | Python / Flask | Autoriza, valida y aplica las reglas de los procesos clínicos | `EC-02`, `EC-05` · `DA-01`, `DA-03`, `DA-07`, `DA-08` · RF-01 a RF-12 |
+| Aplicación administrativa | Sin detalle en este TP | Caja negra: turnos, pacientes, tutores y pagos (procesos 1 y 3 del DFD) | `DA-04` · R8 y R10 |
+| Base de datos central | PostgreSQL | Fuente única de datos: historial versionado, auditoría y datos administrativos | `EC-03`, `EC-04` · `DA-04`, `DA-06` |
+| Almacén de respaldos | Copias base y registro de transacciones | Guarda copias para restaurar la base a un instante previo a la falla | `EC-03` · `DA-05` |
 
-### 6.3 Catálogo de Relaciones entre Contenedores
+Fuera del límite del sistema, con los mismos nombres que el DFD del TP1:
 
-| Origen | Destino | Qué se comunica | Protocolo |
-| :--- | :--- | :--- | :--- |
-| Usuarios (Vet/Sec/Tutor) | Aplicación Web Frontend | Clics, carga de formularios y visualización de pantallas | HTTPS |
-| Aplicación Web Frontend | Backend API REST | Solicitudes de consulta, edición e historial | HTTPS / REST JSON |
-| Backend API REST | Base de Datos Relacional | Consultas SQL, inserción de versiones e inserción en auditoría | SQL / TCP Port 5432 |
-| Backend API REST | Vademécum OMIA | Consulta de compatibilidad de fármacos | HTTPS / REST JSON |
+| Elemento | Tipo | Descripción |
+|---|---|---|
+| Médico/a Veterinario/a | Persona | Atiende, registra y consulta historiales |
+| Secretario/a o Recepcionista | Persona | Gestiona turnos, pacientes y pagos |
+| Tutor/a de Mascota | Persona | Consulta información de su mascota |
+| Base de Datos Externa OMIA | Sistema externo | Catálogo de enfermedades y rasgos hereditarios en animales; consulta de solo lectura |
 
----
+### 6.3 Catálogo de relaciones entre contenedores
 
-## 7. Vista de Componentes (C4 - Nivel 3)
+| Origen | Destino | Qué se comunica | Tipo | Protocolo |
+|---|---|---|---|---|
+| Médico/a Veterinario/a | Interfaz web | Usa la interfaz para registrar y consultar historiales | Interacción de persona | HTTPS |
+| Secretario/a o Recepcionista | Interfaz web | Usa la interfaz para gestionar turnos, pacientes y pagos | Interacción de persona | HTTPS |
+| Tutor/a de Mascota | Interfaz web | Usa la interfaz para consultar información de su mascota | Interacción de persona | HTTPS |
+| Interfaz web | API clínica | Solicita operaciones clínicas | Síncrona | JSON/HTTPS |
+| Interfaz web | Aplicación administrativa | Solicita operaciones administrativas | Síncrona | JSON/HTTPS |
+| API clínica | Base de datos central | Lee y escribe historiales, auditoría y tratamientos | Acceso a datos | SQL |
+| Aplicación administrativa | Base de datos central | Lee y escribe turnos, pacientes y pagos | Acceso a datos | SQL |
+| Base de datos central | Almacén de respaldos | Archiva copias y registro de transacciones | Acceso a datos | Archivos |
+| API clínica | Base de Datos Externa OMIA | Consulta patologías de referencia | Integración con sistema externo | HTTPS |
 
-Hacemos zoom sobre el contenedor principal que implementa los procesos elegidos: **Backend API REST**, organizado bajo una **Arquitectura en Capas**.
+### 6.4 Cómo se ve el estilo elegido
 
-### 7.1 Diagrama de Componentes del Backend API REST
+| Estilo | Dónde se ve en el diagrama |
+|---|---|
+| Cliente-servidor (base) | «Interfaz web» es el cliente y siempre inicia la comunicación; «API clínica» y «Aplicación administrativa» son los servidores. Ninguna flecha va del servidor al cliente, y el cliente no se conecta a la base |
+| Repositorio (zona de datos) | «API clínica» y «Aplicación administrativa» solo comparten datos a través de «Base de datos central»; no hay ninguna flecha entre ellas. «Almacén de respaldos» es una copia pasiva, no una fuente de datos |
+
+### 6.5 Verificación de las reglas 4.4, 4.6 y 4.7
+
+| Regla | ¿Se cumple? | Evidencia |
+|---|---|---|
+| Título y sistema claros (4.4) | Sí | «Contenedores de VetGestión» |
+| Dentro del límite solo contenedores; personas y sistemas externos fuera (4.4) | Sí | Cinco contenedores dentro; tres personas y OMIA fuera |
+| Cada contenedor indica nombre, tecnología y responsabilidad (4.4) | Sí | Catálogo 6.2 |
+| Almacenes de datos como contenedores (4.4) | Sí | «Base de datos central» y «Almacén de respaldos» |
+| Lo que existe por una táctica se dibuja y se rastrea a una decisión (4.4) | Sí | «Almacén de respaldos» → `DA-05` |
+| Un contenedor no contiene otros; sin componentes ni clases (4.4) | Sí | — |
+| Sin elementos aislados (4.4) | Sí | Todos tienen al menos una relación |
+| Alrededor de diez elementos o menos (4.4) | Sí | Nueve: tres personas, cinco contenedores y un sistema externo |
+| Respeta las restricciones del estilo base (4.4, Tabla 4) | Sí | Ver 5.2.2 y 5.2.3 |
+| Flecha con verbo, desde quien inicia, sin respuesta, con protocolo (4.6) | Sí | Catálogo 6.3 |
+| Nombres de rol, sin tecnología ni «Servidor» o «Módulo»; mismo nombre en todas las vistas; un solo idioma (4.7) | Sí | Coinciden con el DFD y con las secciones 7, 9 y 10 |
+
+## 7. Vista de componentes
+
+Se hace una vista por cada contenedor que implementa los procesos elegidos: la «API clínica» (procesos 2 y 4 del DFD) y la «Interfaz web» (pantallas de HU-01 a HU-03). «Aplicación administrativa» es caja negra y las dos bases son almacenes: no tienen vista de componentes.
+
+### 7.1 API clínica
+
+#### 7.1.1 Diagrama de componentes
 
 ```mermaid
 C4Component
-    title Diagrama de Componentes — Contenedor Backend API REST en Capas (C4 - Nivel 3)
-
-    Container(webAppComp, "Aplicación Web Frontend", "HTML5/JS", "Cliente que solicita operaciones")
-    ContainerDb(dbComp, "Base de Datos PostgreSQL", "PostgreSQL", "Almacén de datos y auditoría")
-    System_Ext(omniaComp, "API Externa OMIA", "REST JSON", "Vademécum externo")
-
-    Container_Boundary(apiBoundary, "Backend API REST (Arquitectura en Capas)") {
-        
-        Component(authMiddleware, "Middleware Auth & RBAC", "Capa Presentación / Middleware", "Valida JWT/sesión y exige rol de Veterinario para operaciones clínicas (EC-02).")
-        Component(consultaController, "Controlador de Consultas", "Capa Presentación / Route", "Recibe y valida DTOs de nueva consulta y solicitudes de edición (EC-01).")
-        Component(prescripcionController, "Controlador de Prescripciones", "Capa Presentación / Route", "Recibe solicitudes de prescripción y evaluación de riesgos (EC-01).")
-
-        Component(historialService, "Servicio de Historial Clínico", "Capa Servicios / Dominio", "Implementa la lógica de versionado inalterable (Append-Only) del historial (EC-04).")
-        Component(prescripcionService, "Servicio de Prescripción y Alertas", "Capa Servicios / Dominio", "Coordina las reglas clínicas y evaluación de incompatibilidad entre fármacos.")
-
-        Component(persistenciaRepo, "Repositorio de Persistencia ORM", "Capa Infraestructura / Persistencia", "Ejecuta transacciones ACID SQL, manejador de rollbacks y consultas (EC-03).")
-        Component(integracionOMIA, "Servicio de Integración OMIA", "Capa Infraestructura / Integración", "Encapsula peticiones HTTP a OMIA y parsea el JSON externo (EC-05).")
-        Component(auditLogger, "Componente de Auditoría", "Capa Infraestructura / Aspecto Transversal", "Escribe registros inmutables de auditoría ante cambios o accesos (EC-02, EC-04).")
+    title Componentes de la API clínica
+    Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Cliente de la API")
+    ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos")
+    System_Ext(omia, "Base de Datos Externa OMIA", "Catálogo de enfermedades hereditarias")
+    Container_Boundary(api, "API clínica") {
+        Component(ctrl, "Controladores REST", "Rutas Flask", "Presentación: reciben solicitudes y devuelven respuestas JSON")
+        Component(aut, "Autenticación y autorización", "Middleware", "Transversal: identifica al usuario y verifica rol y autoría")
+        Component(aud, "Auditoría", "Python", "Transversal: registra quién hizo qué y cuándo")
+        Component(exc, "Gestión de excepciones", "Manejador global", "Transversal: traduce los fallos en respuestas controladas")
+        Component(salud, "Chequeo de salud", "Ruta de estado", "Transversal: informa si la base responde")
+        Component(reg, "Servicio de registro clínico", "Python", "Servicios: registra consultas, vacunas, patologías y procedimientos y corrige entradas con versionado")
+        Component(hist, "Servicio de consulta de historial", "Python", "Servicios: arma el historial unificado y la evolución del peso")
+        Component(presc, "Servicio de prescripciones y alertas", "Python", "Servicios: registra tratamientos y evalúa interacciones con reglas propias")
+        Component(ref, "Servicio de referencias", "Python", "Servicios: busca patologías de referencia")
+        Component(val, "Validación de registros clínicos", "Python", "Servicios: verifica formatos y rangos y arma los errores por campo")
+        Component(datos, "Acceso a datos", "Python y SQL", "Datos: consultas y transacciones")
+        Component(adap, "Adaptador de OMIA", "Cliente HTTP", "Datos e integración: traduce las respuestas de OMIA al modelo propio")
     }
-
-    Rel(webAppComp, authMiddleware, "Envía peticiones HTTP con Token/Sesión", "HTTPS / JSON")
-    
-    Rel(authMiddleware, consultaController, "Deriva petición autorizada", "Invocación Interna")
-    Rel(authMiddleware, prescripcionController, "Deriva petición autorizada", "Invocación Interna")
-    Rel(authMiddleware, auditLogger, "Notifica intento no autorizado (EC-02)", "Invocación Interna")
-
-    Rel(consultaController, historialService, "Invoca registro o edición de consulta", "Invocación Interna")
-    Rel(prescripcionController, prescripcionService, "Invoca evaluación de prescripción", "Invocación Interna")
-
-    Rel(prescripcionService, integracionOMIA, "Solicita tabla de interacciones de fármacos", "Invocación Interna")
-    Rel(integracionOMIA, omniaComp, "Petición HTTP REST de interacciones", "HTTPS / JSON")
-
-    Rel(historialService, auditLogger, "Registra motivo y autor de modificación (EC-04)", "Invocación Interna")
-    Rel(historialService, persistenciaRepo, "Persiste versión de consulta (Append-Only)", "Invocación Interna")
-    Rel(prescripcionService, persistenciaRepo, "Guarda tratamiento activo", "Invocación Interna")
-
-    Rel(persistenciaRepo, dbComp, "Ejecuta comandos SQL y transacciones", "SQL / TCP 5432")
-    Rel(auditLogger, dbComp, "Inserta registros en la tabla de auditoría", "SQL / TCP 5432")
+    Rel(web, ctrl, "Solicita", "JSON/HTTPS")
+    Rel(ctrl, aut, "Verifica permisos")
+    Rel(ctrl, exc, "Delega los fallos")
+    Rel(ctrl, reg, "Invoca")
+    Rel(ctrl, hist, "Invoca")
+    Rel(ctrl, presc, "Invoca")
+    Rel(ctrl, ref, "Invoca")
+    Rel(reg, val, "Valida")
+    Rel(presc, val, "Valida")
+    Rel(reg, aud, "Registra cambios")
+    Rel(aut, aud, "Registra rechazos")
+    Rel(reg, datos, "Guarda versiones")
+    Rel(hist, datos, "Lee historial")
+    Rel(presc, datos, "Lee y guarda tratamientos")
+    Rel(aud, datos, "Guarda registros")
+    Rel(salud, datos, "Comprueba la base")
+    Rel(ref, adap, "Busca referencias")
+    Rel(adap, omia, "Consulta patologías", "HTTPS")
+    Rel(datos, bd, "Lee y escribe", "SQL")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-### 7.2 Catálogo de Componentes del Backend API REST
+#### 7.1.2 Catálogo de componentes
 
-| Componente | Capa | Responsabilidad |
-| :--- | :--- | :--- |
-| **Middleware Auth & RBAC** | Presentación | Intercepta todas las peticiones, valida JWT y verifica si el rol es `Veterinario` antes de permitir operaciones de modificación (EC-02). |
-| **Controlador de Consultas** | Presentación | Recibe las peticiones HTTP de la UI, valida DTOs de entrada y retorna respuestas con referencias de error (`#id`) (EC-01). |
-| **Controlador de Prescripciones** | Presentación | Recibe datos de fármacos a prescribir y reenvía las solicitudes de alerta a la capa de servicios. |
-| **Servicio de Historial Clínico** | Servicios / Dominio | Ejecuta la regla del historial inalterable: no sobrescribe, sino que asigna un nuevo ID y enlaza la versión previa con motivo obligatorio (EC-04). |
-| **Servicio de Prescripción y Alertas** | Servicios / Dominio | Evalúa las incompatibilidades médicas combinando datos locales con las respuestas de OMIA. |
-| **Repositorio de Persistencia ORM** | Infraestructura | Abstrae la base de datos PostgreSQL, ejecuta bloques transaccionales ACID y gestiona el versionado (EC-03). |
-| **Servicio de Integración OMIA** | Infraestructura | Encapsula las llamadas HTTP externas a la API de OMIA y traduce los formatos JSON para proteger al dominio de cambios en el proveedor (EC-05). |
-| **Componente de Auditoría** | Aspecto Transversal | Registra automáticamente en la tabla de auditoría inmutable todo evento de edición, intento de acceso no autorizado o acción crítica (EC-02, EC-04). |
+| Componente | Capa o aspecto | Tecnología | Responsabilidad | Se rastrea a |
+|---|---|---|---|---|
+| Controladores REST | Presentación | Rutas Flask | Reciben solicitudes y devuelven respuestas JSON | Interfaz de CU-01 a CU-03 · `DA-01` |
+| Servicio de registro clínico | Servicios | Python | Registra consultas, vacunas, patologías y procedimientos y corrige entradas con versionado | RF-01 a RF-05, RF-08 · HU-01, HU-02 · `DA-06` |
+| Servicio de consulta de historial | Servicios | Python | Arma el historial unificado y la evolución del peso | RF-07, RF-12 · CU-02 |
+| Servicio de prescripciones y alertas | Servicios | Python | Registra tratamientos y evalúa interacciones con reglas propias | RF-06 · HU-03 · `DA-08` |
+| Servicio de referencias | Servicios | Python | Busca patologías de referencia | RF-09 · CU-01, slice A3 |
+| Validación de registros clínicos | Servicios | Python | Verifica formatos y rangos y arma los errores por campo | RF-10, RF-11 · HU-01 · `EC-01` |
+| Acceso a datos | Datos e integración | Python y SQL | Consultas y transacciones | `EC-03`, `EC-04` · `DA-04` |
+| Adaptador de OMIA | Datos e integración | Cliente HTTP | Traduce las respuestas de OMIA al modelo propio | RF-09 · `EC-05` · `DA-07` |
+| Autenticación y autorización | Transversal | Middleware | Identifica al usuario y verifica rol y autoría | RF-08 · `EC-02` · `DA-03` |
+| Auditoría | Transversal | Python | Registra quién hizo qué y cuándo | `EC-04`, `EC-02` · `DA-06` |
+| Gestión de excepciones | Transversal | Manejador global | Traduce los fallos en respuestas controladas | CU-01, slice E1 · `EC-03` · `DA-05` |
+| Chequeo de salud | Transversal | Ruta de estado | Informa si la base responde | `EC-03` · `DA-05` |
 
-### 7.3 Catálogo de Relaciones entre Componentes
+#### 7.1.3 Catálogo de relaciones
 
-| Origen | Destino | Qué se comunica | Tipo / Protocolo |
-| :--- | :--- | :--- | :--- |
-| Aplicación Web Frontend | Middleware Auth & RBAC | Solicitud HTTP con token de sesión | HTTPS / JSON |
-| Middleware Auth & RBAC | Controladores | Redirección de petición una vez autorizada | Invocación Interna |
-| Controladores | Servicios de Dominio | Invocación de operaciones de negocio con DTOs validados | Invocación Interna |
-| Servicio Prescripción | Servicio Integración OMIA | Consulta de compatibilidad enviando códigos de fármacos | Invocación Interna |
-| Servicio Integración OMIA | API Externa OMIA | Petición REST de tabla de interacciones | HTTPS / REST JSON |
-| Servicios de Dominio | Repositorio Persistencia | Guardado de versiones y consultas SQL | Invocación Interna |
-| Repositorio Persistencia | Base de Datos PostgreSQL | Sentencias SQL transaccionales | SQL / TCP 5432 |
-| Componente Auditoría | Base de Datos PostgreSQL | Inserción de logs en tabla de auditoría | SQL / TCP 5432 |
+| Origen | Destino | Qué se comunica | Tipo | Protocolo |
+|---|---|---|---|---|
+| Interfaz web | Controladores REST | Solicita operaciones clínicas | Desde un contenedor vecino | JSON/HTTPS |
+| Controladores REST | Autenticación y autorización | Verifica permisos | Uso de un aspecto transversal | — |
+| Controladores REST | Gestión de excepciones | Delega los fallos | Uso de un aspecto transversal | — |
+| Controladores REST | Servicio de registro clínico | Invoca | Invocación interna | — |
+| Controladores REST | Servicio de consulta de historial | Invoca | Invocación interna | — |
+| Controladores REST | Servicio de prescripciones y alertas | Invoca | Invocación interna | — |
+| Controladores REST | Servicio de referencias | Invoca | Invocación interna | — |
+| Servicio de registro clínico | Validación de registros clínicos | Valida | Invocación interna | — |
+| Servicio de prescripciones y alertas | Validación de registros clínicos | Valida | Invocación interna | — |
+| Servicio de registro clínico | Auditoría | Registra cambios | Uso de un aspecto transversal | — |
+| Autenticación y autorización | Auditoría | Registra rechazos | Uso de un aspecto transversal | — |
+| Servicio de registro clínico | Acceso a datos | Guarda versiones | Invocación interna | — |
+| Servicio de consulta de historial | Acceso a datos | Lee historial | Invocación interna | — |
+| Servicio de prescripciones y alertas | Acceso a datos | Lee y guarda tratamientos | Invocación interna | — |
+| Auditoría | Acceso a datos | Guarda registros | Invocación interna | — |
+| Chequeo de salud | Acceso a datos | Comprueba la base | Invocación interna | — |
+| Servicio de referencias | Adaptador de OMIA | Busca referencias | Invocación interna | — |
+| Adaptador de OMIA | Base de Datos Externa OMIA | Consulta patologías | Hacia un sistema externo | HTTPS |
+| Acceso a datos | Base de datos central | Lee y escribe | Hacia un contenedor vecino | SQL |
 
----
+#### 7.1.4 Cómo se ven los patrones y los aspectos transversales
 
-## 8. Historias de Usuario sobre las Vistas
+| Elemento de la arquitectura | Dónde se ve en el diagrama |
+|---|---|
+| Patrón de capas (`DA-01`) | Presentación: Controladores REST. Servicios: los cinco servicios y la validación. Datos e integración: Acceso a datos y Adaptador de OMIA. Las flechas entre capas van solo hacia abajo |
+| Encapsulamiento de OMIA (`DA-07`) | Solo «Adaptador de OMIA» se conecta con OMIA; «Servicio de referencias» no conoce su formato |
+| Autenticación y autorización | Componente «Autenticación y autorización», usado por los controladores |
+| Auditoría | Componente «Auditoría», usado por el servicio de registro clínico y por la autorización |
+| Gestión de excepciones | Componente «Gestión de excepciones», usado por los controladores |
+| Instrumentación mínima | Componente «Chequeo de salud» |
 
-A continuación se demuestra la ejecución de las Historias de Usuario principales del TP1 a través de los contenedores y componentes de la arquitectura:
+#### 7.1.5 Verificación de las reglas 4.5, 4.6 y 4.7
 
-### 8.1 HU-01: Manejo de Datos Obligatorios Incompletos o Inválidos
-- **Given (Dado que):** El/la veterinario/a está en la `Aplicación Web Frontend` registrando una nueva consulta y deja el peso en blanco o con formato texto.
-- **When (Cuando):** Selecciona la opción "Guardar Consulta".
-- **Then (Entonces):**
-  1. El cliente valida localmente los tipos de datos básicos.
-  2. Si pasa la UI, se envía el DTO al `Controlador de Consultas` vía HTTPS.
-  3. El controlador detecta el campo faltante, interrumpe el procesamiento antes de invocar a la capa de servicios y responde HTTP 400 Bad Request con la lista de errores.
-  4. La `Aplicación Web Frontend` captura la respuesta y muestra el banner con enlaces `#id` al campo inválido, **conservando intactos todos los datos tipeados** por el usuario.
+| Regla | ¿Se cumple? | Evidencia |
+|---|---|---|
+| Los componentes están dentro del límite de la API clínica; lo externo fuera, sin sus componentes (4.5) | Sí | «Interfaz web», «Base de datos central» y OMIA se dibujan como contenedor o sistema |
+| Un componente pertenece a un solo contenedor y no contiene otros (4.5) | Sí | — |
+| Cada componente indica nombre y responsabilidad; no hay clases (4.5) | Sí | Catálogo 7.1.2 |
+| Respeta las restricciones del patrón de capas, Tabla 6 (4.5) | Sí | Ninguna capa depende de las superiores y no se saltean capas (ver 5.3.2) |
+| Los aspectos transversales adoptados son componentes propios (4.5) | Sí | Autenticación y autorización, Auditoría, Gestión de excepciones y Chequeo de salud |
+| Sin componentes huérfanos (4.5) | Sí | Cada componente tiene trazabilidad en 7.1.2 |
+| Entre componentes, verbo sin protocolo; hacia o desde otro contenedor, verbo y protocolo (4.6) | Sí | Catálogo 7.1.3 |
+| Nombres de responsabilidad, sin clases ni nombres que solo indican la capa (4.7) | Sí | — |
 
-### 8.2 HU-02: Edición de Entradas Previas en el Historial Clínico
-- **Given (Dado que):** Un/a veterinario/a requiere corregir el diagnóstico de una atención previa y el usuario logueado es el autor original (RF-08).
-- **When (Cuando):** Ingresa la modificación, escribe el motivo obligatorio y presiona "Confirmar Edición".
-- **Then (Entonces):**
-  1. La petición llega al `Middleware Auth & RBAC`, que verifica que el token corresponda al rol de `Veterinario`.
-  2. Pasa al `Controlador de Consultas` y de allí al `Servicio de Historial Clínico`.
-  3. El servicio verifica la regla de negocio: no ejecuta un `UPDATE`, sino que crea un nuevo registro con el diagnóstico actualizado, asigna un nuevo ID y referencia la versión previa.
-  4. Invoca al `Componente de Auditoría` para registrar el autor, timestamp, motivo e IDs en la tabla inmutable.
-  5. El `Repositorio de Persistencia ORM` ejecuta todo dentro de una transacción SQL ACID en `PostgreSQL`.
+### 7.2 Interfaz web
 
-### 8.3 HU-03: Notificación de Alerta por Interacción Medicamentosa
-- **Given (Dado que):** El/la veterinario/a selecciona un fármaco (ej. *Meloxicam*) para un paciente que ya tiene un tratamiento activo registrado (*Prednisolona*).
-- **When (Cuando):** Solicita prescribir el medicamento.
-- **Then (Entonces):**
-  1. La solicitud llega al `Controlador de Prescripciones` e invoca al `Servicio de Prescripción y Alertas`.
-  2. El servicio llama al `Servicio de Integración OMIA` en la capa de infraestructura.
-  3. `ServicioIntegracionOMIA` realiza la consulta HTTPS REST a la API de `OMIA`.
-  4. `OMIA` retorna el JSON con la incompatibilidad de Nivel Crítico.
-  5. El servicio detecta la alerta y retorna una respuesta de advertencia hacia la `Aplicación Web Frontend`, desplegando el modal de color coral que exige ingresar una justificación profesional antes de autorizar el guardado.
+#### 7.2.1 Diagrama de componentes
 
+```mermaid
+C4Component
+    title Componentes de la Interfaz web
+    Person(vet, "Médico/a Veterinario/a", "Usuario clínico")
+    Container(api, "API clínica", "Python / Flask", "Servidor de los procesos clínicos")
+    Container_Boundary(web, "Interfaz web") {
+        Component(vista, "Vistas", "HTML y CSS", "Muestran el estado del modelo: pantallas, errores por campo y confirmaciones")
+        Component(ctl, "Controladores de pantalla", "JavaScript", "Interpretan las acciones del usuario y actualizan el modelo")
+        Component(mod, "Modelo de formulario", "JavaScript", "Conserva lo ingresado, los errores por campo y el contexto del paciente")
+        Component(cli, "Cliente de la API", "JavaScript", "Envía las solicitudes al servidor")
+    }
+    Rel(vet, vista, "Interactúa con")
+    Rel(vista, ctl, "Notifica acciones")
+    Rel(ctl, mod, "Actualiza")
+    Rel(mod, vista, "Notifica cambios")
+    Rel(ctl, cli, "Pide enviar")
+    Rel(cli, api, "Envía solicitudes", "JSON/HTTPS")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+#### 7.2.2 Catálogo de componentes
+
+| Componente | Rol en MVC | Tecnología | Responsabilidad | Se rastrea a |
+|---|---|---|---|---|
+| Vistas | Vista | HTML y CSS | Muestran el estado del modelo: pantallas, errores por campo y confirmaciones | Pantallas del TP2 para HU-01 a HU-03 · `DA-02` |
+| Controladores de pantalla | Controlador | JavaScript | Interpretan las acciones del usuario y actualizan el modelo | HU-01 a HU-03 · `DA-02` |
+| Modelo de formulario | Modelo | JavaScript | Conserva lo ingresado, los errores por campo y el contexto del paciente | HU-01 («sin perder la información cargada») · `EC-01` · `DA-02` |
+| Cliente de la API | Apoyo | JavaScript | Envía las solicitudes al servidor | `DA-01` |
+
+#### 7.2.3 Catálogo de relaciones
+
+| Origen | Destino | Qué se comunica | Tipo | Protocolo |
+|---|---|---|---|---|
+| Médico/a Veterinario/a | Vistas | Interactúa con las pantallas | Interacción de persona | — |
+| Vistas | Controladores de pantalla | Notifica acciones | Invocación interna | — |
+| Controladores de pantalla | Modelo de formulario | Actualiza | Invocación interna | — |
+| Modelo de formulario | Vistas | Notifica cambios | Invocación interna | — |
+| Controladores de pantalla | Cliente de la API | Pide enviar | Invocación interna | — |
+| Cliente de la API | API clínica | Envía solicitudes | Hacia un contenedor vecino | JSON/HTTPS |
+
+#### 7.2.4 Verificación
+
+| Regla | ¿Se cumple? | Evidencia |
+|---|---|---|
+| El modelo no conoce a la vista ni al controlador (Tabla 6) | Sí | El modelo solo notifica cambios |
+| La vista no modifica el modelo directamente (Tabla 6) | Sí | La vista notifica acciones al controlador |
+| El controlador interpreta acciones y actualiza el modelo (Tabla 6) | Sí | Flecha «Actualiza» |
+| La vista muestra el estado del modelo (Tabla 6) | Sí | Flecha «Notifica cambios» |
+| Lo externo va fuera del límite (4.5) | Sí | La persona y la API clínica se dibujan fuera |
+| Sin componentes huérfanos (4.5) | Sí | Trazabilidad en 7.2.2 |
+
+## 8. Historias de usuario sobre las vistas
+
+Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) tal como está en el TP1. Los componentes se nombran en el orden en que intervienen.
+
+### 8.1 HU-01 — Datos obligatorios incompletos o inválidos
+
+| Paso del criterio | Qué ocurre | Contenedores | Componentes |
+|---|---|---|---|
+| **Given:** completa el formulario y escribe un peso negativo o deja la fecha en blanco | El formulario muestra y conserva lo ingresado | Interfaz web | Vistas → Controladores de pantalla → Modelo de formulario |
+| **When:** presiona «Guardar Consulta» | La acción viaja al servidor, se verifica la sesión y se validan los datos | Interfaz web → API clínica | Vistas → Controladores de pantalla → Cliente de la API → Controladores REST → Autenticación y autorización → Servicio de registro clínico → Validación de registros clínicos |
+| **Then (1):** el sistema rechaza el almacenamiento | La validación detecta el error y el servicio no llama a «Acceso a datos»: no se escribe nada en la base | API clínica | Validación de registros clínicos → Servicio de registro clínico → Controladores REST → Gestión de excepciones |
+| **Then (2):** resalta en rojo el campo y muestra el motivo | La respuesta con los errores por campo vuelve y la interfaz conserva lo ingresado | API clínica → Interfaz web | Cliente de la API → Controladores de pantalla → Modelo de formulario → Vistas |
+
+### 8.2 HU-02 — Edición de entradas previas del historial
+
+| Paso del criterio | Qué ocurre | Contenedores | Componentes |
+|---|---|---|---|
+| **Given:** con sesión activa visualiza el historial y selecciona un registro de su autoría | Se lee el historial y la interfaz ofrece editar solo las entradas propias | Interfaz web → API clínica → Base de datos central | Vistas → Controladores de pantalla → Cliente de la API → Controladores REST → Autenticación y autorización → Servicio de consulta de historial → Acceso a datos |
+| **When:** edita la observación clínica y confirma | Se verifican rol y autoría (RF-08) y se validan los datos | Interfaz web → API clínica | Vistas → Controladores de pantalla → Modelo de formulario → Cliente de la API → Controladores REST → Autenticación y autorización → Servicio de registro clínico → Validación de registros clínicos |
+| **Then (1):** el sistema actualiza el registro en la base de datos | Se guarda una versión nueva y el registro de auditoría en una sola transacción (`DA-06`) | API clínica → Base de datos central | Servicio de registro clínico → Auditoría → Acceso a datos |
+| **Then (2):** refleja la modificación con un indicador de actualización | La respuesta vuelve y el historial muestra la entrada como «Modificada» | API clínica → Interfaz web | Controladores REST → Cliente de la API → Controladores de pantalla → Modelo de formulario → Vistas |
+
+*Observación:* el escenario `EC-04` exige un motivo obligatorio en cada corrección, pero el criterio de HU-02 del TP1 no lo menciona. Si el grupo lo mantiene, conviene agregarlo al criterio en el TP1; la «Auditoría» ya tiene dónde guardarlo.
+
+### 8.3 HU-03 — Alerta por interacción medicamentosa
+
+| Paso del criterio | Qué ocurre | Contenedores | Componentes |
+|---|---|---|---|
+| **Given:** el paciente tiene una medicación activa que genera conflicto con el nuevo fármaco | La medicación activa y las reglas de interacción están en la base | Base de datos central | Acceso a datos |
+| **When:** selecciona y confirma la nueva prescripción | Se verifican sesión y datos, y se leen la medicación activa y las reglas | Interfaz web → API clínica → Base de datos central | Vistas → Controladores de pantalla → Modelo de formulario → Cliente de la API → Controladores REST → Autenticación y autorización → Servicio de prescripciones y alertas → Validación de registros clínicos → Acceso a datos |
+| **Then (1):** despliega una alerta visual que detalla la incompatibilidad | El servicio detecta el conflicto con sus reglas propias y no registra la prescripción; la respuesta vuelve con el detalle | API clínica → Interfaz web | Servicio de prescripciones y alertas → Controladores REST → Cliente de la API → Controladores de pantalla → Modelo de formulario → Vistas |
+| **Then (2):** permite justificar la decisión o cancelar | **Justificar:** se envía la justificación y el servicio registra la prescripción. **Cancelar:** la interfaz descarta la prescripción sin llamar al servidor | Interfaz web → API clínica → Base de datos central (si justifica) | Justificar: Vistas → Controladores de pantalla → Cliente de la API → Controladores REST → Servicio de prescripciones y alertas → Acceso a datos. Cancelar: Vistas → Controladores de pantalla |
+
+*Observación:* en este recorrido no interviene OMIA, porque las alertas usan reglas propias (`DA-08`).
 ---
 
 ## 9. Decisiones de arquitectura
