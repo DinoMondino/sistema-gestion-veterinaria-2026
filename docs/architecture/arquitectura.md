@@ -35,7 +35,7 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 ### 2.1 Restricciones Técnicas
 - **R1 (Navegador y Dispositivos):** El cliente web debe funcionar en navegadores modernos (Chrome, Firefox, Edge, Safari) sin requerir plug-ins adicionales y ser operable desde tablets de consultorio.
 - **R2 (Tecnología Backend y Persistencia):** El servidor debe implementarse en Python utilizando el framework Flask para la API REST, y PostgreSQL como motor de base de datos relacional.
-- **R3 (Sistemas Externos):** la consulta a OMIA es de solo lectura (RF-09). No se asume una API de integración estable.
+- **R3 (Sistemas externos):** la consulta a OMIA es de solo lectura (RF-09). No se asume una API de integración estable: el SRS declara que OMIA no es una API pensada para integración directa, y la forma de acceso debe confirmarse antes del TP4.
 
 ### 2.2 Restricciones del Equipo y Tecnología
 - **R4 (Tamaño y Experiencia del Equipo):** Proyecto desarrollado por un equipo reducido (3 integrantes) con alta familiaridad en arquitecturas web tradicionales (Cliente-Servidor / Capas) y tiempo acotado.
@@ -49,7 +49,7 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 - **R8(Ciclo de Vida)**: Se ha seleccionado un ciclo de vida incremental, así los módulos se entregarán por etapas, pudiendo agregar módulos sin reescribir los anteriores
 
 ### 2.5 Restricciones Legales y Éticas
-- **R9 (Protección de Datos)**: Se exige confidencialidad de los datos personales de los tutores bajo las Leyes argentinas y el código de ética de la IEEE/ACR
+- **R9 (Protección de datos):** se exige confidencialidad de los datos personales de los tutores, según la legislación argentina de protección de datos personales (Ley 25.326) y el código de ética de la IEEE/ACM (Institute of Electrical and Electronics Engineers / Association for Computing Machinery).
 
 ---
 
@@ -161,7 +161,7 @@ Un escenario que se resuelve dentro de un solo componente o solo en la interfaz 
 | Fuente | Qué aporta |
 |---|---|
 | RF y HU del TP1 | RF-08 («validación exclusiva de rol») y HU-02 («de su autoría») fijan qué debe autorizar el servidor; HU-01 («sin perder la información cargada») respalda `EC-01`; HU-03 y CU-03 definen el servicio de alertas |
-| Restricciones (sección 2) | R4 y R5 inclinan hacia cliente-servidor con capas y descartan microservicios; R9 pide poder agregar la aplicación administrativa sin tocar el clínico |
+| Restricciones (sección 2) | R4 y R5 inclinan hacia cliente-servidor con capas y descartan microservicios; R8 pide poder agregar la aplicación administrativa sin tocar el clínico |
 | DFD Nivel 1 | Los procesos 1, 2, 3 y 4 se relacionan solo a través de almacenes de datos (D1 a D4), sin flujos directos entre procesos: es la base del estilo repositorio |
 
 ### 4.4 Prioridad entre drivers
@@ -279,7 +279,7 @@ Un **estilo** es un conjunto de principios que da un marco abstracto para una fa
 | Estilo | ¿Adoptado? | Motivo |
 |---|---|---|
 | Cliente-servidor | **Sí: estilo base** | `EC-02` pide control centralizado de la autorización en el servidor; R1, R2, R4 y R5 favorecen una estructura con pocas piezas que el equipo ya conoce |
-| Repositorio | **Sí: estilo adicional, solo para la zona de datos** | `EC-03` (transacciones sobre un almacén central) y `EC-04` (permisos y auditoría centralizados). Además, en el DFD Nivel 1 los procesos solo se comunican a través de almacenes de datos, y R9 pide agregar la aplicación administrativa sin tocar el clínico |
+| Repositorio | **Sí: estilo adicional, solo para la zona de datos** | `EC-03` (transacciones sobre un almacén central) y `EC-04` (permisos y auditoría centralizados). Además, en el DFD Nivel 1 los procesos solo se comunican a través de almacenes de datos, y R8 pide agregar la aplicación administrativa sin tocar el clínico |
 | Tuberías y filtros | No | El sistema no es un flujo de transformación de datos en etapas. La cadena de verificaciones de una petición dentro de la API es un mecanismo del framework, no el estilo del sistema; declararlo sería combinar por acumulación |
 | Orientada a eventos | No | Ningún escenario exige tareas lentas, picos de carga ni procesamiento diferido. La interrupción de red al guardar (CU-01, slice E1) se resuelve con una transacción atómica y con la conservación de lo cargado en el cliente |
 | Microservicios | No | R4 y R5; ningún escenario exige escalar o desplegar por separado, y `EC-05` se resuelve con encapsulamiento. Sumaría complejidad operativa y consistencia entre bases |
@@ -310,7 +310,7 @@ SOA es arquitectura orientada a servicios.
 - **Principio:** los datos compartidos viven en un almacén central que varias aplicaciones consultan y actualizan, y las aplicaciones solo se comunican entre sí a través de ese almacén.
 - **Dónde aplica:** solo a la **zona de datos**: la «Base de datos central» y las dos aplicaciones que la usan, «API clínica» y «Aplicación administrativa».
 - **Por qué responde a escenarios:** `EC-03` y `EC-04` necesitan un único lugar donde se apliquen transacciones, permisos y auditoría. Las dos aplicaciones comparten datos reales (el proceso 2 lee los pacientes y los turnos que escribe el proceso 1, según el DFD Nivel 1), y el almacén central evita que se llamen directamente.
-- **Qué mejora:** consistencia e integridad (transacciones), permisos y auditoría en un único punto, y desacople entre módulos, lo que permite agregar la aplicación administrativa en otra etapa (R9).
+- **Qué mejora:** consistencia e integridad (transacciones), permisos y auditoría en un único punto, y desacople entre módulos, lo que permite agregar la aplicación administrativa en otra etapa (R8).
 - **Qué sacrifica:** el almacén es un punto único de falla; el esquema de datos acopla a quienes lo usan; la base puede volverse un cuello de botella al escalar.
 - **Cómo se conectan las zonas:** el estilo cliente-servidor y el repositorio se conectan por la conexión SQL de cada servidor a la base. Es el único punto de integración entre las dos aplicaciones servidor.
 - **No confundir** con el «patrón repositorio» de diseño (clases que encapsulan consultas): acá se habla del estilo, es decir, de un almacén central compartido.
@@ -763,7 +763,7 @@ A continuación se demuestra la ejecución de las Historias de Usuario principal
 
 ### DA-04 — Base de datos central compartida con transacciones (estilo repositorio) y aplicación administrativa como caja negra
 
-- **Escenario que la motiva:** `EC-03` y `EC-04`; R9 y DFD Nivel 1.
+- **Escenario que la motiva:** `EC-03` y `EC-04`; R8 y DFD Nivel 1.
 - **Contexto:** los procesos del DFD se relacionan solo por almacenes de datos y hay que poder agregar la aplicación administrativa en otra etapa sin tocar el clínico. Se necesita un único lugar donde se apliquen transacciones, permisos y auditoría.
 - **Decisión:**
   - Tácticas: transacciones; rollback; limitar acceso.
