@@ -24,7 +24,7 @@ Este documento está diseñado para los siguientes roles organizacionales y téc
 - **Evaluadores y Docentes:** Para auditar el proceso de derivación desde los atributos de calidad hasta los diagramas C4 y decisiones de arquitectura.
 
 ### 1.4 Siglas y Acrónimos
-Las siglas se aclaran la primera vez que se usan y se reúnen en el glosario (sección 11). Las principales: **TP** (trabajo práctico), **RF** (requerimiento funcional), **CU** (caso de uso), **HU** (historia de usuario), **EC** (escenario de calidad), **DA** (decisión de arquitectura), **DFD** (diagrama de flujo de datos), **C4** (modelo de documentación en cuatro niveles: contexto, contenedores, componentes y código), **OMIA** (*Online Mendelian Inheritance in Animals*: catálogo de rasgos y enfermedades hereditarias en animales).
+Las siglas se aclaran la primera vez que se usan y se reúnen en el glosario (sección 11). Las principales: **TP** (trabajo práctico), **RF** (requerimiento funcional), **CU** (caso de uso), **HU** (historia de usuario), **EC** (escenario de calidad), **DA** (decisión de arquitectura), **DFD** (diagrama de flujo de datos), **C4** (modelo de documentación en cuatro niveles: contexto, contenedores, componentes y código), **OMIA** (*Online Mendelian Inheritance in Animals*).
 
 ---
 
