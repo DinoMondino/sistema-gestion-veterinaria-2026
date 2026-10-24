@@ -208,7 +208,7 @@ Una **táctica** es una decisión de diseño elemental que influye en el logro d
 |---|---|---|---|
 | Resistir ataques | Identificar, autenticar y autorizar actores | Cada operación de escritura se atribuye a un usuario autenticado y el servidor verifica rol y autoría antes de ejecutarla → 100 % de rechazos | Autenticación y autorización |
 | Resistir ataques | Limitar acceso | La base de datos solo es accesible desde los contenedores servidor: no hay camino para modificar datos que evite la verificación → «0 registros modificados» | Base de datos central |
-| Resistir ataques | Limitar exposición | Hacia afuera solo se expone la interfaz HTTPS del sistema, no la base ni los respaldos | Despliegue (TP4) |
+| Resistir ataques | Limitar exposición | Hacia afuera solo se expone la interfaz HTTPS del sistema, no la base ni los respaldos | Vista de contenedores: solo la Interfaz web recibe conexiones de las personas |
 | Resistir ataques | Cifrar datos | HTTPS protege credenciales y sesión; sin eso un tercero podría suplantar un rol clínico | Relaciones entre contenedores |
 | Recuperarse | Registro de auditoría | Cada rechazo genera un evento con usuario, acción y recurso en ≤ 1 s | Auditoría |
 
