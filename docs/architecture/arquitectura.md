@@ -984,10 +984,10 @@ Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) t
 - **Elementos afectados:** «Servicio de prescripciones y alertas», «Acceso a datos», «Base de datos central».
 
 ---
-
+## 10. Trazabilidad
 ### 10.1 Escenario → táctica → estilo o patrón → decisión → elemento C4
 
-Los nombres de los elementos coinciden con los de las vistas v1. Esta tabla se cierra en la Parte B, cuando las vistas queden verificadas.
+Los nombres de los elementos coinciden con los de las secciones 6 y 7.
 
 | Escenario (TP2) | Atributo (Tabla 1) | Tácticas | Estilo o patrón | Decisión | Elemento C4 |
 |---|---|---|---|---|---|
@@ -999,13 +999,15 @@ Los nombres de los elementos coinciden con los de las vistas v1. Esta tabla se c
 
 Todo driver llega a al menos un contenedor o componente, y cada driver tiene al menos una decisión (`EC-01`: DA-02; `EC-02`: DA-03; `EC-03`: DA-05; `EC-04`: DA-06; `EC-05`: DA-07).
 
-### 10.2 Trazabilidad de Historias de Usuario a Elementos C4
+### 10.2 Historia de usuario → contenedores y componentes
 
-| Historia de Usuario (TP1) | Contenedores Involucrados | Componentes Clave del Backend |
-| :--- | :--- | :--- |
-| **HU-01** (Validación de Consulta) | `Aplicación Web Frontend`, `Backend API REST` | `Controlador de Consultas`, `Servicio Historial`, `PersistenciaRepo` |
-| **HU-02** (Edición de Historial) | `Aplicación Web Frontend`, `Backend API REST`, `PostgreSQL` | `Middleware Auth & RBAC`, `Servicio Historial`, `AuditLogger`, `PersistenciaRepo` |
-| **HU-03** (Alerta de Interacción) | `Aplicación Web Frontend`, `Backend API REST`, `OMIA` | `Controlador Prescripción`, `Servicio Prescripcion`, `ServicioIntegracionOMIA` |
+| Historia de usuario (TP1) | Contenedores | Componentes |
+|---|---|---|
+| HU-01 — Datos obligatorios incompletos o inválidos | Interfaz web · API clínica | Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API · Controladores REST, Autenticación y autorización, Servicio de registro clínico, Validación de registros clínicos, Gestión de excepciones |
+| HU-02 — Edición de entradas previas | Interfaz web · API clínica · Base de datos central | Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API · Controladores REST, Autenticación y autorización, Servicio de consulta de historial, Servicio de registro clínico, Validación de registros clínicos, Auditoría, Acceso a datos |
+| HU-03 — Alerta por interacción medicamentosa | Interfaz web · API clínica · Base de datos central | Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API · Controladores REST, Autenticación y autorización, Servicio de prescripciones y alertas, Validación de registros clínicos, Acceso a datos |
+
+El detalle paso a paso de cada historia está en la sección 8.
 
 ---
 
