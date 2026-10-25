@@ -117,22 +117,21 @@ When: El veterinario presiona el botón "Guardar Consulta".
 
 Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y muestra un mensaje indicando con precisión el motivo del fallo.
 
-### HU-02 - Edición de entradas previas en el historial clínico
-Deriva de: CU-01, slice A2 (RF-08)
+### HU-02 — Edición de entradas previas del historial clínico
 
-Como Médico Veterinario,
+**Como** médico/a veterinario/a,  
+**quiero** corregir una entrada previa de la historia clínica que haya registrado,  
+**para** mantener la información clínica actualizada sin perder la trazabilidad de los cambios.
 
-quiero poder editar o corregir entradas previas dentro del historial clínico de un paciente,
+**Criterios de aceptación (Given-When-Then):**
 
-para rectificar errores de tipeo o incorporar datos omitidos bajo mi validación exclusiva de rol.
-
-Criterios de Aceptación (GWT):
-
-Given: El veterinario con sesión activa visualiza el historial clínico y selecciona un registro de consulta previo de su autoría para modificar.
-
-When: El veterinario edita la observación clínica y confirma los cambios.
-
-Then: El sistema actualiza el registro seleccionado en la base de datos y refleja la modificación con un indicador de actualización en la vista del historial.
+- **Given:** el/la veterinario/a inició sesión y seleccionó una entrada de la historia clínica de su autoría.
+- **When:** modifica la información de la entrada, ingresa el motivo de la corrección y confirma la operación.
+- **Then:** el sistema verifica que el usuario tenga permisos para realizar la corrección y que sea el autor original de la entrada; valida que el motivo no esté vacío; conserva la versión original y crea una nueva versión vinculada con la anterior.
+- **And:** el sistema registra en la auditoría el autor de la corrección, la fecha y hora, la versión anterior, la nueva versión y el motivo informado.
+- **And:** la nueva versión y el registro de auditoría se guardan en una única transacción. Si la operación falla, no se confirma ninguno de los dos cambios.
+- **And:** el historial muestra la entrada como modificada, sin eliminar ni sobrescribir la versión original.
+- **And:** si el motivo está vacío o el usuario no tiene autorización, la operación se rechaza y no se modifica el historial.
 
 ### HU-03 - Notificación de alerta por interacción medicamentosa
 Deriva de: CU-03, slice A1 (RF-10)
