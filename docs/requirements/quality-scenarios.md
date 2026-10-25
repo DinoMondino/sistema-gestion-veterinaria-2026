@@ -3,7 +3,7 @@
 
 ### Atributo 1 — Operabilidad
 
-#### Escenario 1.1 — Registro de una consulta en una urgencia clínica
+#### EC-01 · Escenario 1.1— Registro de una consulta en una urgencia clínica
 
 | Componente | Descripción |
 |---|---|
@@ -20,7 +20,7 @@
 
 ### Atributo 2 — Integridad
 
-#### Escenario 2.1 — Petición de modificación clínica que saltea la interfaz
+#### EC-02 · Escenario 2.1 — Petición de modificación clínica que saltea la interfaz
 
 | Componente | Descripción |
 |---|---|
@@ -37,7 +37,7 @@
 
 ### Atributo 3 — Capacidad de recuperación
 
-#### Escenario 3.1 — Caída de la base de datos en plena jornada
+#### EC-03 · Escenario 3.1  — Caída de la base de datos en plena jornada
 
 | Componente | Descripción |
 |---|---|
@@ -54,7 +54,7 @@
 
 ### Atributo 4 — Responsabilidad (accountability)
 
-#### Escenario 4.1 — Corrección de una entrada histórica del historial
+#### EC-04 · Escenario 4.1 — Corrección de una entrada histórica del historial
 
 | Componente | Descripción |
 |---|---|
@@ -71,7 +71,7 @@
 
 ### Atributo 5 — Modificabilidad
 
-#### Escenario 5.1 — OMIA cambia su formato o debe reemplazarse
+#### EC-05 · Escenario 5.1 — OMIA cambia su formato o debe reemplazarse
 
 | Componente | Descripción |
 |---|---|
