@@ -810,11 +810,126 @@ C4Component
 | Lo externo va fuera del límite (4.5) | Sí | La persona y la API clínica se dibujan fuera |
 | Sin componentes huérfanos (4.5) | Sí | Trazabilidad en 7.2.2 |
 
-## 8. Historias de usuario sobre las vistas
+## 8. Vista de despliegue
+ 
+La vista muestra el **entorno de producción**, el único que se documenta (secc. 4.8 de la guía). Para cada contenedor de la sección 6 indica en qué nodo se ejecuta y cuántas instancias hay. No crea contenedores ni relaciones nuevas.
+ 
+### 8.1 Punto de partida y criterio
+ 
+Se parte del despliegue más simple que permiten las restricciones: todo en un único servidor (R7). Un nodo se separa solo cuando un escenario lo exige (4.3, paso 8). El resultado es la siguiente tabla:
+ 
+| Separación | ¿Se separa? | Escenario que lo exige | Si no se separara |
+|---|---|---|---|
+| Almacén de respaldos fuera del servidor de la base | **Sí** | `EC-03`: «respaldos fuera del servidor principal» (impacto en la arquitectura) y falla de hardware del servidor de base como estímulo | Una falla de hardware destruiría la base y sus copias a la vez: no hay restauración posible y se pierde el RPO |
+| Base de datos fuera del servidor de aplicación | **Sí** | `EC-03`: con la base caída hay que seguir mostrando el aviso de mantenimiento y conservar lo cargado (degradación controlada, `DA-05`), y eso solo lo puede hacer una API que siga viva. `EC-02`: la base solo debe ser alcanzable desde los contenedores servidor (limitar acceso) | Una falla del servidor de base tumbaría también la API: no habría quien muestre el aviso, y el acceso a la base dependería solo de una red interna de Docker |
+| API clínica y Aplicación administrativa en nodos distintos | No | Ningún escenario lo exige | Un nodo más que operar (R5) sin ganancia en ningún escenario |
+| Réplicas de la API clínica (x2) | No | `EC-03` admite hasta 4 h de recuperación: la redundancia activa ya se descartó en 5.1 | Doble infraestructura y balanceador (R5, R7) |
+ 
+### 8.2 Diagrama de despliegue
+ 
+```mermaid
+C4Deployment
+ title Despliegue de VetGestión - Producción
+ Deployment_Node(disp, "Dispositivo del usuario", "Tablet o computadora con navegador web") {
+ Container(web, "Interfaz web", "HTML, CSS y JavaScript", "Presenta las pantallas en el navegador y conserva el estado de los formularios")
+ }
+ Deployment_Node(srvApp, "Servidor de aplicación", "Máquina virtual, Ubuntu Server, proxy inverso con HTTPS") {
+ Deployment_Node(dk, "Docker", "Docker Engine") {
+ Container(api, "API clínica", "Python / Flask", "Autoriza, valida y aplica las reglas de los procesos clínicos")
+ Container(adm, "Aplicación administrativa", "Sin detalle en este TP", "Caja negra: turnos, pacientes, tutores y pagos")
+ }
+ }
+ Deployment_Node(srvBd, "Servidor de base de datos", "Máquina virtual, Ubuntu Server") {
+ ContainerDb(bd, "Base de datos central", "PostgreSQL", "Fuente única de datos: historial versionado, auditoría y datos administrativos")
+ }
+ Deployment_Node(srvResp, "Servidor de respaldos", "Máquina virtual, Ubuntu Server, ubicación distinta de la base") {
+ ContainerDb(resp, "Almacén de respaldos", "Copias base y registro de transacciones", "Copias para restaurar la base a un instante previo a la falla")
+ }
+ Rel(web, api, "Solicita operaciones clínicas", "JSON/HTTPS")
+ Rel(web, adm, "Solicita operaciones administrativas", "JSON/HTTPS")
+ Rel(api, bd, "Lee y escribe", "SQL")
+ Rel(adm, bd, "Lee y escribe", "SQL")
+ Rel(bd, resp, "Archiva copias y transacciones", "Archivos")
+ UpdateRelStyle(bd, resp, $offsetY="-45", $offsetX="-15")
+ UpdateRelStyle(web, api, $offsetY="-12")
+ UpdateRelStyle(api, bd, $offsetX="-30")
+ UpdateRelStyle(adm, bd, $offsetX="10")
+ UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="2")
+```
+ 
+El proxy inverso (el programa que recibe las conexiones HTTPS y las reparte a las aplicaciones) no tiene contenedor propio: no es una aplicación del sistema, así que, como indica 4.8, se indica en el nodo donde corre. Las relaciones con las personas y con OMIA no se dibujan porque ya están en la vista de contenedores.
+ 
+### 8.3 Catálogo de nodos
+ 
+| Nodo | Tipo o tecnología | Contenedores que ejecuta | Instancias | Escenario o decisión que lo justifica |
+|---|---|---|---|---|
+| Dispositivo del usuario | Tablet o computadora con navegador web (Chrome, Firefox, Edge o Safari) | Interfaz web | Una por usuario conectado | Es el cliente (R1). El código de la interfaz se descarga desde el «Servidor de aplicación» y se ejecuta en el navegador. No depende de una decisión de infraestructura |
+| Servidor de aplicación | Máquina virtual, Ubuntu Server, con Docker y proxy inverso con HTTPS | API clínica, Aplicación administrativa (cada una en su contenedor Docker) | 1 | `DA-10`: cada aplicación se despliega por separado (R8, `EC-05`). `DA-09`: es el único nodo expuesto hacia afuera (`EC-02`, limitar exposición) y sigue vivo si cae la base (`EC-03`) |
+| Servidor de base de datos | Máquina virtual, Ubuntu Server, con PostgreSQL instalado directamente (sin Docker) | Base de datos central | 1 | `DA-09`: aislamiento de la base (`EC-02`, `EC-03`). `DA-04`: una única base permite las transacciones de `EC-03` y `EC-04` |
+| Servidor de respaldos | Máquina virtual, Ubuntu Server, con disco propio | Almacén de respaldos | 1 | `DA-09` y `DA-05`: copias fuera del servidor de la base, para que una falla de hardware no se lleve base y respaldos juntos (`EC-03`) |
+ 
+Supuestos a confirmar por el grupo: las tres máquinas virtuales se contratan a un proveedor de nube o de servidores virtuales, en una sola región (R7), con el «Servidor de respaldos» en un centro de datos o proveedor distinto del de la base. La capacidad inicial es una estimación para una sola clínica: 2 procesadores y 4 GB de memoria para el servidor de aplicación y para el de base, y en el de respaldos un disco que guarde al menos siete días de copias y de registro de transacciones. Se ajusta con el uso real.
+ 
+### 8.4 Cómo viajan las relaciones entre nodos
+ 
+Cada flecha del diagrama es una de la vista de contenedores (sección 6.3), con el mismo protocolo. Aquí se agrega solo por dónde viajan:
+ 
+| Relación (origen → destino) | Entre nodos | Qué implica |
+|---|---|---|
+| Interfaz web → API clínica | Dispositivo del usuario → Servidor de aplicación, por Internet o red de la clínica | La más expuesta: va cifrada con HTTPS. Si se corta, la interfaz conserva lo cargado (`EC-01`) |
+| Interfaz web → Aplicación administrativa | Dispositivo del usuario → Servidor de aplicación | Mismo camino y mismo proxy |
+| API clínica → Base de datos central | Servidor de aplicación → Servidor de base de datos | Red entre servidores: suma demora y puede cortarse; por eso la API detecta el fallo (ping y eco) y degrada (`DA-05`). El puerto de la base solo acepta conexiones desde el servidor de aplicación |
+| Aplicación administrativa → Base de datos central | Servidor de aplicación → Servidor de base de datos | Igual que la anterior |
+| Base de datos central → Almacén de respaldos | Servidor de base de datos → Servidor de respaldos | Transferencia periódica y continua de copias y registro de transacciones; el servidor de respaldos solo acepta conexiones desde el de base |
+| API clínica → Base de Datos Externa OMIA (no se dibuja) | Servidor de aplicación → Internet | Única conexión de salida del sistema; es opcional y de solo lectura (`DA-07`) |
+ 
+### 8.5 Dónde se ven las tácticas y qué pasa si falla un nodo
+ 
+| Escenario | Táctica que depende de la infraestructura | Dónde se ve en el diagrama |
+|---|---|---|
+| `EC-02` | Limitar exposición; limitar acceso; cifrar datos | Solo el «Servidor de aplicación» recibe conexiones de las personas, por HTTPS; la base y los respaldos no son alcanzables desde los dispositivos |
+| `EC-03` | Redundancia de repuesto (copias fuera del servidor de la base) | Nodo «Servidor de respaldos», separado del «Servidor de base de datos» |
+| `EC-03` | Degradación controlada | La API vive en un nodo distinto de la base: con la base caída sigue respondiendo con el aviso de mantenimiento |
+| `EC-04` | Separar entidades | La auditoría vive en un esquema aparte dentro de la «Base de datos central» (no es un nodo distinto: el aislamiento es por permisos) |
+| `EC-05` | Encapsular (el cambio se despliega solo en la API) | Docker: se reemplaza el contenedor «API clínica» sin tocar la base ni la aplicación administrativa |
+ 
+| Si falla… | Qué ocurre | Qué lo contiene |
+|---|---|---|
+| Servidor de aplicación | Se detienen la API clínica y la aplicación administrativa. La interfaz ya cargada en el navegador conserva lo ingresado, pero no puede guardar. Los datos no se pierden: están en la base | Sacrificio asumido (8.6). Se recrea la máquina y se vuelven a levantar los dos contenedores Docker desde sus imágenes |
+| Servidor de base de datos | La API sigue viva y muestra el aviso de mantenimiento; no se aceptan escrituras (`DA-05`) | Restauración desde el «Servidor de respaldos» en una instancia de reemplazo: RTO ≤ 4 h, RPO ≤ 15 min |
+| Servidor de respaldos | El sistema sigue funcionando con normalidad, pero se pierde por un tiempo la protección | Se alerta y se recrea el nodo. Mientras tanto, la base conserva el registro de transacciones sin archivar, que se envía al volver |
+| Dispositivo del usuario | Afecta solo a ese usuario | Otra tablet o computadora con navegador |
+ 
+La instancia de reemplazo de la base no se dibuja: en producción no existe hasta que se necesita (redundancia de repuesto, `DA-05`) y por eso no es un nodo ni un contenedor nuevo. Se aprovisiona según el procedimiento de restauración.
+ 
+### 8.6 Sacrificios asumidos
+ 
+- **Puntos únicos de falla:** hay un solo servidor de aplicación y uno de base. Si cae el de aplicación, no hay servicio hasta recrearlo; si cae el de base, no hay escrituras hasta restaurar (hasta 4 h). Es coherente con el RTO de `EC-03` y con R5 y R7.
+- **Sin balanceo ni réplicas:** una carga inesperada en la API no se reparte. Con una sola clínica no hay escenario que lo pida.
+- **Red entre servidores:** separar la base suma una conexión de red que puede fallar o demorar. Se acepta a cambio del aislamiento y de la degradación controlada.
+- **Más infraestructura que operar:** tres servidores en lugar de uno (`RA-6`).
+### 8.7 Verificación de las reglas 4.6, 4.7 y 4.8
+ 
+| Regla | ¿Se cumple? | Evidencia |
+|---|---|---|
+| Un solo diagrama, del entorno de producción (4.8) | Sí | Sección 8.2 |
+| Todo contenedor aparece al menos una vez, dentro de un nodo; no se crean contenedores nuevos (4.8) | Sí | Los cinco contenedores de 6.2 están en los cuatro nodos del catálogo 8.3 |
+| Los nodos separados responden a un escenario (4.6 y 4.8) | Sí | Tabla 8.1 |
+| No más de dos niveles de nodos (4.8) | Sí | Servidor de aplicación → Docker |
+| Cada nodo indica nombre y tipo o tecnología, y capacidad si importa (4.8) | Sí | Diagrama y catálogo 8.3 |
+| Varias instancias con «(x2)» en el nombre (4.8) | No aplica | Todos los nodos tienen una instancia |
+| Personas y sistemas externos fuera de la vista; sí el nodo del cliente (4.8) | Sí | Está «Dispositivo del usuario» y no están las personas ni OMIA |
+| Un elemento de infraestructura sin contenedores propios no es un nodo vacío (4.8) | Sí | El proxy inverso figura en el tipo del servidor de aplicación |
+| Cada relación corresponde a una de la vista de contenedores, con el mismo protocolo (4.6 y 4.8) | Sí | Cinco flechas de 8.2 = filas de 6.3; la que va a OMIA queda fuera por 4.8 |
+| Táctica dependiente de la infraestructura señalable en el diagrama (4.8) | Sí | Tabla 8.5 |
+| Decisiones de despliegue registradas (4.8) | Sí | `DA-09` y `DA-10` |
+| Nombres de rol, tecnología en su campo; mismos nombres que en las otras vistas (4.7) | Sí | Contenedores idénticos a 6.2 |
+
+## 9. Historias de usuario sobre las vistas
 
 Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) tal como está en el TP1. Los componentes se nombran en el orden en que intervienen.
 
-### 8.1 HU-01 — Datos obligatorios incompletos o inválidos
+### 9.1 HU-01 — Datos obligatorios incompletos o inválidos
 
 | Paso del criterio | Qué ocurre | Contenedores | Componentes |
 |---|---|---|---|
@@ -823,7 +938,7 @@ Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) t
 | **Then (1):** el sistema rechaza el almacenamiento | La validación detecta el error y el servicio no llama a «Acceso a datos»: no se escribe nada en la base | API clínica | Validación de registros clínicos → Servicio de registro clínico → Controladores REST → Gestión de excepciones |
 | **Then (2):** resalta en rojo el campo y muestra el motivo | La respuesta con los errores por campo vuelve y la interfaz conserva lo ingresado | API clínica → Interfaz web | Cliente de la API → Controladores de pantalla → Modelo de formulario → Vistas |
 
-### 8.2 HU-02 — Edición de entradas previas del historial
+### 9.2 HU-02 — Edición de entradas previas del historial
 
 | Paso del criterio | Qué ocurre | Contenedores | Componentes |
 |---|---|---|---|
@@ -835,7 +950,7 @@ Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) t
 
 **Correspondencia con EC-04 y DA-06:** el motivo de la corrección es obligatorio. La nueva versión y su registro de auditoría se guardan atómicamente, y la versión anterior se conserva sin sobrescritura.
 
-### 8.3 HU-03 — Alerta por interacción medicamentosa
+### 9.3 HU-03 — Alerta por interacción medicamentosa
 
 | Paso del criterio | Qué ocurre | Contenedores | Componentes |
 |---|---|---|---|
@@ -847,7 +962,7 @@ Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) t
 *Observación:* en este recorrido no interviene OMIA, porque las alertas usan reglas propias (`DA-08`).
 ---
 
-## 9. Decisiones de arquitectura
+## 10. Decisiones de arquitectura
 
 ### DA-01 — Cliente-servidor como estilo base, con el servidor organizado en capas
 
@@ -985,8 +1100,8 @@ Cada recorrido sigue los pasos del criterio de aceptación (*Given-When-Then*) t
 - **Elementos afectados:** «Servicio de prescripciones y alertas», «Acceso a datos», «Base de datos central».
 
 ---
-## 10. Trazabilidad
-### 10.1 Escenario → táctica → estilo o patrón → decisión → elemento C4
+## 11. Trazabilidad
+### 11.1 Escenario → táctica → estilo o patrón → decisión → elemento C4
 
 Los nombres de los elementos coinciden con los de las secciones 6 y 7.
 
@@ -1000,7 +1115,7 @@ Los nombres de los elementos coinciden con los de las secciones 6 y 7.
 
 Todo driver llega a al menos un contenedor o componente, y cada driver tiene al menos una decisión (`EC-01`: DA-02; `EC-02`: DA-03; `EC-03`: DA-05; `EC-04`: DA-06; `EC-05`: DA-07).
 
-### 10.2 Historia de usuario → contenedores y componentes
+### 11.2 Historia de usuario → contenedores y componentes
 
 | Historia de usuario (TP1) | Contenedores | Componentes |
 |---|---|---|
@@ -1012,9 +1127,9 @@ El detalle paso a paso de cada historia está en la sección 8.
 
 ---
 
-## 11. Glosario y Bibliografía
+## 12. Glosario y Bibliografía
 
-### 11.1 Glosario
+### 12.1 Glosario
 
 | Término | Significado |
 |---|---|
@@ -1042,7 +1157,7 @@ El detalle paso a paso de cada historia está en la sección 8.
 | Táctica | Decisión de diseño elemental que influye en la respuesta de un escenario de calidad |
 | TP | Trabajo práctico |
 
-### 11.2 Bibliografía
+### 12.2 Bibliografía
 1. **Bass, L., Clements, P., & Kazman, R. (2021).** *Software Architecture in Practice* (4th ed.). Addison-Wesley Professional.
 2. **Brown, S. (2020).** *The C4 Model for Visualising Software Architecture*. Structurizr.
 3. **ISO/IEC/IEEE 25010:2023.** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model*.
