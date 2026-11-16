@@ -139,15 +139,20 @@ flowchart TB
 
 ### Paso 4. Diagramas de Secuencia
 
-Contexto y Convenciones
+# Paso 4 — Diagramas de Secuencia y Asignación de Responsabilidades (HU-01)
 
-Secuencia A: Camino Principal. El veterinario ya corrigió y guarda con datos válidos (CU-01, pasos 5 a 7). Es el destino de la HU: «corregirlos» y poder guardar.
-Secuencia B: Caminos de Rechazo. Es el camino que pide el criterio de aceptación: peso negativo y/o fecha en blanco. Las dos causas son variantes pequeñas del mismo camino (se muestran con opt) y se informan juntas.
-Seguridad (EC-02): El rechazo por falta de permisos pertenece a EC-02 y RF-08, no es criterio de HU-01: en las dos secuencias se modela solo el caso habilitado.
-Convenciones: La flecha punteada con cruz (--x) es un error que el servicio señala; los mensajes entre componentes siguen el catálogo del TP3. Modelo de formulario y Cliente de la API se tratan como colaboradores internos de ControladorPantalla, tal como dice la tabla de correspondencia del Paso 3 (CP → Modelo de formulario: Actualiza; CP → Cliente de la API: Pide enviar).
+## Contexto y Convenciones
 
+* **Secuencia A: Camino Principal.** El veterinario ya corrigió y guarda con datos válidos (CU-01, pasos 5 a 7). Es el destino de la HU: «corregirlos» y poder guardar.
+* **Secuencia B: Caminos de Rechazo.** Es el camino que pide el criterio de aceptación: peso negativo y/o fecha en blanco. Las dos causas son variantes pequeñas del mismo camino (se muestran con `opt`) y se informan juntas.
+* **Seguridad (EC-02):** El rechazo por falta de permisos pertenece a EC-02 y RF-08, no es criterio de HU-01: en las dos secuencias se modela solo el caso habilitado.
+* **Convenciones:** La flecha punteada con cruz (`--x`) es un error que el servicio señala; los mensajes entre componentes siguen el catálogo del TP3. `Modelo de formulario` y `Cliente de la API` se tratan como colaboradores internos de `ControladorPantalla`, tal como dice la tabla de correspondencia del Paso 3.
 
-### 4.1 Secuencia A: Camino Principal (Flujo Exitoso)
+---
+
+## 4.1 Secuencia A: Camino Principal (Flujo Exitoso)
+
+```mermaid
 sequenceDiagram
     actor Vet as Médico<br/>Veterinario
     participant UI as Formulario<br/>NuevaConsulta
@@ -185,9 +190,13 @@ sequenceDiagram
     REST-->>CP: RespuestaApi(201)
     CP->>UI: mostrar_confirmacion()
     UI-->>Vet: informa que la consulta se guardó
+```
 
+---
 
-### 4.2 Secuencia B: Caminos de Rechazo (Datos Inválidos)
+## 4.2 Secuencia B: Caminos de Rechazo (Datos Inválidos)
+
+```mermaid
 sequenceDiagram
     actor Vet as Médico<br/>Veterinario
     participant UI as Formulario<br/>NuevaConsulta
@@ -230,12 +239,33 @@ sequenceDiagram
     CP->>CP: registrar_errores(errores)
     CP->>UI: mostrar_errores(errores, campos)
     UI-->>Vet: resalta en rojo cada campo con error, muestra su motivo y conserva lo cargado
+```
 
+---
 
-### 4.3 Alcance y Demostración de la Táctica (EC-01 / DA-02)
-Alcance de las reglas: Se diagraman fecha y peso, que son los dos campos que nombra el criterio de aceptación. El maquetado del TP2 (app.py) también exige síntomas y diagnóstico preliminar: se validan con el mismo mensaje validar(datos) y el mismo mecanismo, sin agregar mensajes nuevos. Conviene sumarlos como RN-06 en el Paso 3.
-Dónde se ve la táctica de EC-01 (DA-02)
-TácticaOperación o mensaje que la muestraEvidencia en el diseñoMantener modelos de tarea, de usuario y del sistema (Modelo de formulario)conservar_datos(campos) antes de enviar y registrar_errores(errores) al volver el rechazoLa pantalla se redibuja desde ese estado (mostrar_errores(errores, campos)) $\rightarrow$ 0 pérdidas de datos.Reducir sobrecarga (ValidacionRegistrosClinicos)Una sola llamada validar(datos) recorre todos los campos y devuelve todos los errores juntos en un único DatosInvalidosErrorMenos interacciones ida y vuelta entre cliente y servidor.
+## 4.3 Demostración de la Táctica de Calidad (EC-01 / DA-02)
 
-### 4.4 Asignación de Responsabilidades (Criterios GRASP)
-ResponsabilidadQuiénCriterio GRASPPor quéCaptar los datos y mostrar errores resaltados o la confirmaciónFormularioNuevaConsultaBajo acoplamientoSolo conoce al controlador de pantalla. No decide qué es inválido: resalta lo que le informan.Conservar lo ingresado y los errores, y coordinar el envíoControladorPantallaControladorRecibe el evento de la pantalla y lo coordina; es el Modelo de formulario de EC-01.Interpretar el pedido (JSON $\rightarrow$ DatosConsulta) y armar la respuestaControladorRESTControladorEs la entrada de la API clínica (capa Presentación).Identificar al usuario y verificar que puede registrar consultasAutenticacionAutorizacionCreadorTiene los datos del token para crear el Veterinario.Saber si el veterinario puede registrar consultasVeterinarioExperto en informaciónConoce su rol.Coordinar el registro: validar, obtener la historia, registrar, guardarServicioRegistroClinicoControlador (del caso de uso)Ordena los pasos; no valida ni decide reglas del dominio. Impide guardar si hay errores (RN-03).Recorrer todos los campos y juntar los errores por campoValidacionRegistrosClinicosAlta cohesiónSu única tarea es aplicar las reglas de RF-10 y armar los errores de RF-11 (RN-04); la reutiliza también el servicio de prescripciones (TP3).Decidir si una fecha y un peso son válidosConsultaExperto en informaciónSabe qué es una fecha de atención y un peso admisibles (RN-01, RN-02).Crear los errores y saber si hay algunoValidacionRegistrosClinicos (crea) y ErroresPorCampo (hay_errores)Creador y ExpertoLa validación los usa de forma directa; el contenedor conoce su contenido.Traducir el error en una respuesta controladaGestionExcepcionesAlta cohesiónEs el aspecto transversal del TP3; los servicios solo señalan.Obtener y guardar la mascota con su historiaRepositorioMascotasAlta cohesión y bajo acoplamientoEl servicio no sabe cómo se guarda.Saber cuál es su historia clínicaMascotaExperto en informaciónTiene la relación 1 a 1 con su historia.Crear la consulta y agregarla a su historialHistoriaClinicaCreadorContiene y «registra» consultas (modelo del TP1).thumb_upContenido adecuado thumb_downContenido inadecuado 
+| Táctica | Operación o mensaje que la muestra | Evidencia en el diseño |
+| :--- | :--- | :--- |
+| **Mantener modelos de tarea, de usuario y del sistema** (`Modelo de formulario`) | `conservar_datos(campos)` **antes** de enviar y `registrar_errores(errores)` al volver el rechazo | La pantalla se redibuja desde ese estado (`mostrar_errores(errores, campos)`) $\rightarrow$ **0 pérdidas de datos**. |
+| **Reducir sobrecarga** (`ValidacionRegistrosClinicos`) | Una sola llamada `validar(datos)` recorre todos los campos y devuelve **todos** los errores juntos en un único `DatosInvalidosError` | Menos interacciones ida y vuelta entre cliente y servidor. |
+
+---
+
+## 4.4 Asignación de Responsabilidades (Criterios GRASP)
+
+| Responsabilidad | Quién | Criterio GRASP | Por qué |
+| :--- | :--- | :--- | :--- |
+| **Captar los datos y mostrar errores resaltados o la confirmación** | `FormularioNuevaConsulta` | Bajo acoplamiento | Solo conoce al controlador de pantalla. No decide qué es inválido: resalta lo que le informan. |
+| **Conservar lo ingresado y los errores, y coordinar el envío** | `ControladorPantalla` | Controlador | Recibe el evento de la pantalla y lo coordina; es el Modelo de formulario de `EC-01`. |
+| **Interpretar el pedido (JSON $\rightarrow$ `DatosConsulta`) y armar la respuesta** | `ControladorREST` | Controlador | Es la entrada de la API clínica (capa Presentación). |
+| **Identificar al usuario y verificar que puede registrar consultas** | `AutenticacionAutorizacion` | Creador | Tiene los datos del token para crear el `Veterinario`. |
+| **Saber si el veterinario puede registrar consultas** | `Veterinario` | Experto en información | Conoce su rol. |
+| **Coordinar el registro: validar, obtener la historia, registrar, guardar** | `ServicioRegistroClinico` | Controlador (del caso de uso) | Ordena los pasos; no valida ni decide reglas del dominio. Impide guardar si hay errores (RN-03). |
+| **Recorrer todos los campos y juntar los errores por campo** | `ValidacionRegistrosClinicos` | Alta cohesión | Su única tarea es aplicar las reglas de RF-10 y armar los errores de RF-11 (RN-04); la reutiliza también el servicio de prescripciones (TP3). |
+| **Decidir si una fecha y un peso son válidos** | `Consulta` | Experto en información | Sabe qué es una fecha de atención y un peso admisibles (RN-01, RN-02). |
+| **Crear los errores y saber si hay alguno** | `ValidacionRegistrosClinicos` (crea) y `ErroresPorCampo` (`hay_errores`) | Creador y Experto | La validación los usa de forma directa; el contenedor conoce su contenido. |
+| **Traducir el error en una respuesta controlada** | `GestionExcepciones` | Alta cohesión | Es el aspecto transversal del TP3; los servicios solo señalan. |
+| **Obtener y guardar la mascota con su historia** | `RepositorioMascotas` | Alta cohesión y bajo acoplamiento | El servicio no sabe cómo se guarda. |
+| **Saber cuál es su historia clínica** | `Mascota` | Experto en información | Tiene la relación 1 a 1 con su historia. |
+| **Crear la consulta y agregarla a su historial** | `HistoriaClinica` | Creador | Contiene y «registra» consultas (modelo del TP1). |
