@@ -194,43 +194,29 @@ sequenceDiagram
     participant UI as Formulario<br/>NuevaConsulta
     participant CP as Controlador<br/>Pantalla
     participant REST as Controlador<br/>REST
-    participant AUT as Autenticacion<br/>Autorizacion
-    participant SRC as ServicioRegistro<br/>Clinico
-    participant VAL as ValidacionRegistros<br/>Clinicos
-    participant C as Consulta
-    participant EXC as Gestion<br/>Excepciones
+    participant SRC as ServicioRegistroClinico
+    participant VAL as ValidacionRegistrosClinicos
+    participant RC as RepositorioClinico
     Vet->>UI: presiona «Guardar Consulta» (peso negativo y/o fecha en blanco)
-    UI->>CP: guardar_consulta(mascota_id, campos)
-    CP->>CP: conservar_datos(campos)
-    CP->>REST: registrar_consulta(mascota_id, campos, token)<br/>POST /api/v1/consultas (JSON/HTTPS)
-    REST->>AUT: verificar_permisos(token)
-    AUT-->>REST: veterinario
-    REST->>REST: leer_datos(campos)
-    REST->>SRC: registrar_consulta(mascota_id, datos, veterinario)
+    UI->>CP: evento submit del formulario
+    CP->>CP: leer datos con FormData(form)
+    CP->>REST: POST /api/mascotas/{mascota_id}/consultas (JSON)
+    REST->>REST: request.get_json()
+    REST->>SRC: registrar(mascota_id, datos)
+    SRC->>RC: obtener_contexto(mascota_id)
+    RC-->>SRC: (mascota, historia)
     SRC->>VAL: validar(datos)
-    create participant E as ErroresPorCampo
-    VAL->>E: ErroresPorCampo()
-    VAL->>C: motivo_fecha_invalida(datos.fecha, hoy)
-    C-->>VAL: motivo (o nada)
-    opt la fecha está en blanco o es posterior a hoy
-        VAL->>E: agregar("fecha", motivo)
-    end
-    VAL->>C: motivo_peso_invalido(datos.peso)
-    C-->>VAL: motivo (o nada)
-    opt el peso está vacío o es menor o igual a 0
-        VAL->>E: agregar("peso", motivo)
-    end
-    VAL-->>SRC: errores
-    SRC->>E: hay_errores()
-    E-->>SRC: sí
-    Note over SRC: RN-03: no se invoca a RepositorioMascotas
-    SRC--xREST: DatosInvalidosError(errores)
-    REST->>EXC: traducir(error)
-    EXC-->>REST: RespuestaApi(400, errores)
-    REST-->>CP: RespuestaApi(400, errores)
-    CP->>CP: registrar_errores(errores)
-    CP->>UI: mostrar_errores(errores, campos)
-    UI-->>Vet: resalta en rojo cada campo con error, muestra su motivo y conserva lo cargado
+    VAL->>VAL: comprobar fecha, peso y campos obligatorios
+    VAL->>VAL: construir diccionario de errores
+    VAL-->>SRC: (datos_normalizados, errores)
+    SRC->>SRC: comprobar que existen errores
+    Note over SRC: RN-03: no se ejecuta guardar_consulta()
+    SRC-->>REST: ResultadoRegistro("invalido", errores)
+    REST-->>CP: HTTP 422, JSON con errores
+    CP->>CP: mostrarErrores(errores)
+    Note over CP,UI: No se ejecuta form.reset()
+    CP-->>UI: campos resaltados y mensajes de error
+    UI-->>Vet: informa los errores y conserva los datos ingresados
 ```
 
 ---
