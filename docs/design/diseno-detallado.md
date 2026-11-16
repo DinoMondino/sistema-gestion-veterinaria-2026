@@ -139,4 +139,103 @@ flowchart TB
 
 ### Paso 4. Diagramas de Secuencia
 
+Contexto y Convenciones
 
+Secuencia A: Camino Principal. El veterinario ya corrigió y guarda con datos válidos (CU-01, pasos 5 a 7). Es el destino de la HU: «corregirlos» y poder guardar.
+Secuencia B: Caminos de Rechazo. Es el camino que pide el criterio de aceptación: peso negativo y/o fecha en blanco. Las dos causas son variantes pequeñas del mismo camino (se muestran con opt) y se informan juntas.
+Seguridad (EC-02): El rechazo por falta de permisos pertenece a EC-02 y RF-08, no es criterio de HU-01: en las dos secuencias se modela solo el caso habilitado.
+Convenciones: La flecha punteada con cruz (--x) es un error que el servicio señala; los mensajes entre componentes siguen el catálogo del TP3. Modelo de formulario y Cliente de la API se tratan como colaboradores internos de ControladorPantalla, tal como dice la tabla de correspondencia del Paso 3 (CP → Modelo de formulario: Actualiza; CP → Cliente de la API: Pide enviar).
+
+
+### 4.1 Secuencia A: Camino Principal (Flujo Exitoso)
+sequenceDiagram
+    actor Vet as Médico<br/>Veterinario
+    participant UI as Formulario<br/>NuevaConsulta
+    participant CP as Controlador<br/>Pantalla
+    participant REST as Controlador<br/>REST
+    participant AUT as Autenticacion<br/>Autorizacion
+    participant SRC as ServicioRegistro<br/>Clinico
+    participant VAL as ValidacionRegistros<br/>Clinicos
+    participant RM as Repositorio<br/>Mascotas
+    participant M as Mascota
+    participant HC as Historia<br/>Clinica
+    Vet->>UI: presiona «Guardar Consulta» (datos válidos)
+    UI->>CP: guardar_consulta(mascota_id, campos)
+    CP->>CP: conservar_datos(campos)
+    CP->>REST: registrar_consulta(mascota_id, campos, token)<br/>POST /api/v1/consultas (JSON/HTTPS)
+    REST->>AUT: verificar_permisos(token)
+    create participant V as Veterinario
+    AUT->>V: Veterinario(id, nombre, rol, matricula)
+    AUT->>V: puede_registrar_consultas()
+    V-->>AUT: sí
+    AUT-->>REST: veterinario
+    REST->>REST: leer_datos(campos)
+    REST->>SRC: registrar_consulta(mascota_id, datos, veterinario)
+    SRC->>VAL: validar(datos)
+    VAL-->>SRC: errores (ninguno)
+    SRC->>RM: mascota(mascota_id)
+    RM-->>SRC: mascota
+    SRC->>M: historia_clinica()
+    M-->>SRC: historia
+    SRC->>HC: registrar_consulta(veterinario.id, datos)
+    create participant C as Consulta
+    HC->>C: Consulta(veterinario_id, datos)
+    SRC->>RM: guardar(mascota)
+    SRC-->>REST: consulta registrada
+    REST-->>CP: RespuestaApi(201)
+    CP->>UI: mostrar_confirmacion()
+    UI-->>Vet: informa que la consulta se guardó
+
+
+### 4.2 Secuencia B: Caminos de Rechazo (Datos Inválidos)
+sequenceDiagram
+    actor Vet as Médico<br/>Veterinario
+    participant UI as Formulario<br/>NuevaConsulta
+    participant CP as Controlador<br/>Pantalla
+    participant REST as Controlador<br/>REST
+    participant AUT as Autenticacion<br/>Autorizacion
+    participant SRC as ServicioRegistro<br/>Clinico
+    participant VAL as ValidacionRegistros<br/>Clinicos
+    participant C as Consulta
+    participant EXC as Gestion<br/>Excepciones
+    Vet->>UI: presiona «Guardar Consulta» (peso negativo y/o fecha en blanco)
+    UI->>CP: guardar_consulta(mascota_id, campos)
+    CP->>CP: conservar_datos(campos)
+    CP->>REST: registrar_consulta(mascota_id, campos, token)<br/>POST /api/v1/consultas (JSON/HTTPS)
+    REST->>AUT: verificar_permisos(token)
+    AUT-->>REST: veterinario
+    REST->>REST: leer_datos(campos)
+    REST->>SRC: registrar_consulta(mascota_id, datos, veterinario)
+    SRC->>VAL: validar(datos)
+    create participant E as ErroresPorCampo
+    VAL->>E: ErroresPorCampo()
+    VAL->>C: motivo_fecha_invalida(datos.fecha, hoy)
+    C-->>VAL: motivo (o nada)
+    opt la fecha está en blanco o es posterior a hoy
+        VAL->>E: agregar("fecha", motivo)
+    end
+    VAL->>C: motivo_peso_invalido(datos.peso)
+    C-->>VAL: motivo (o nada)
+    opt el peso está vacío o es menor o igual a 0
+        VAL->>E: agregar("peso", motivo)
+    end
+    VAL-->>SRC: errores
+    SRC->>E: hay_errores()
+    E-->>SRC: sí
+    Note over SRC: RN-03: no se invoca a RepositorioMascotas
+    SRC--xREST: DatosInvalidosError(errores)
+    REST->>EXC: traducir(error)
+    EXC-->>REST: RespuestaApi(400, errores)
+    REST-->>CP: RespuestaApi(400, errores)
+    CP->>CP: registrar_errores(errores)
+    CP->>UI: mostrar_errores(errores, campos)
+    UI-->>Vet: resalta en rojo cada campo con error, muestra su motivo y conserva lo cargado
+
+
+### 4.3 Alcance y Demostración de la Táctica (EC-01 / DA-02)
+Alcance de las reglas: Se diagraman fecha y peso, que son los dos campos que nombra el criterio de aceptación. El maquetado del TP2 (app.py) también exige síntomas y diagnóstico preliminar: se validan con el mismo mensaje validar(datos) y el mismo mecanismo, sin agregar mensajes nuevos. Conviene sumarlos como RN-06 en el Paso 3.
+Dónde se ve la táctica de EC-01 (DA-02)
+TácticaOperación o mensaje que la muestraEvidencia en el diseñoMantener modelos de tarea, de usuario y del sistema (Modelo de formulario)conservar_datos(campos) antes de enviar y registrar_errores(errores) al volver el rechazoLa pantalla se redibuja desde ese estado (mostrar_errores(errores, campos)) $\rightarrow$ 0 pérdidas de datos.Reducir sobrecarga (ValidacionRegistrosClinicos)Una sola llamada validar(datos) recorre todos los campos y devuelve todos los errores juntos en un único DatosInvalidosErrorMenos interacciones ida y vuelta entre cliente y servidor.
+
+### 4.4 Asignación de Responsabilidades (Criterios GRASP)
+ResponsabilidadQuiénCriterio GRASPPor quéCaptar los datos y mostrar errores resaltados o la confirmaciónFormularioNuevaConsultaBajo acoplamientoSolo conoce al controlador de pantalla. No decide qué es inválido: resalta lo que le informan.Conservar lo ingresado y los errores, y coordinar el envíoControladorPantallaControladorRecibe el evento de la pantalla y lo coordina; es el Modelo de formulario de EC-01.Interpretar el pedido (JSON $\rightarrow$ DatosConsulta) y armar la respuestaControladorRESTControladorEs la entrada de la API clínica (capa Presentación).Identificar al usuario y verificar que puede registrar consultasAutenticacionAutorizacionCreadorTiene los datos del token para crear el Veterinario.Saber si el veterinario puede registrar consultasVeterinarioExperto en informaciónConoce su rol.Coordinar el registro: validar, obtener la historia, registrar, guardarServicioRegistroClinicoControlador (del caso de uso)Ordena los pasos; no valida ni decide reglas del dominio. Impide guardar si hay errores (RN-03).Recorrer todos los campos y juntar los errores por campoValidacionRegistrosClinicosAlta cohesiónSu única tarea es aplicar las reglas de RF-10 y armar los errores de RF-11 (RN-04); la reutiliza también el servicio de prescripciones (TP3).Decidir si una fecha y un peso son válidosConsultaExperto en informaciónSabe qué es una fecha de atención y un peso admisibles (RN-01, RN-02).Crear los errores y saber si hay algunoValidacionRegistrosClinicos (crea) y ErroresPorCampo (hay_errores)Creador y ExpertoLa validación los usa de forma directa; el contenedor conoce su contenido.Traducir el error en una respuesta controladaGestionExcepcionesAlta cohesiónEs el aspecto transversal del TP3; los servicios solo señalan.Obtener y guardar la mascota con su historiaRepositorioMascotasAlta cohesión y bajo acoplamientoEl servicio no sabe cómo se guarda.Saber cuál es su historia clínicaMascotaExperto en informaciónTiene la relación 1 a 1 con su historia.Crear la consulta y agregarla a su historialHistoriaClinicaCreadorContiene y «registra» consultas (modelo del TP1).thumb_upContenido adecuado thumb_downContenido inadecuado 
