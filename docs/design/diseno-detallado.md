@@ -53,10 +53,55 @@ Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**Indi
 
 ## Paso 2 — Análisis tridimensional 
 
+| Dimensión         | Elemento                     | Detalle                                                                                                                                                   |
+| ----------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Funcionalidad** | Criterio de aceptación HU-01 | Si se intenta guardar una consulta con peso negativo o fecha vacía, se rechaza el almacenamiento, se identifica el campo inválido y se muestra su motivo. |
+| **Estructura**    | Frontera                     | Formulario de nueva consulta (Vistas de la interfaz web).                                                                                                 |
+| **Estructura**    | Control                      | Controladores de pantalla, Controladores REST y Servicio de registro clínico coordinan el envío, la validación y la respuesta.                            |
+| **Estructura**    | Dominio                      | Consulta contiene los datos a validar; Mascota, HistoriaClinica y Veterinario proporcionan el contexto del registro.                                      |
+| **Estructura**    | Validación                   | Validación de registros clínicos, en la capa de servicios, evalúa los datos y produce errores específicos por campo.                                      |
+| **Calidad**       | EC-01 — Operabilidad         | Conservar los datos ante el rechazo y devolver los errores juntos, evitando que el veterinario deba repetir la carga. Se aplica DA-02.                    |
 
 ---
 
 ### 3.3 Diagrama de Robustez
+
+flowchart TB
+    vet["Médico Veterinario<br/>(actor)"]
+    ui(["«boundary»<br/>FormularioNuevaConsulta"])
+    cp(("«controller»<br/>ControladorPantalla"))
+    api(("«controller»<br/>ControladorREST"))
+    aut(("«controller»<br/>AutenticacionAutorizacion"))
+    reg(("«controller»<br/>ServicioRegistroClinico"))
+    val(("«controller»<br/>ValidacionRegistrosClinicos"))
+    exc(("«controller»<br/>GestionExcepciones"))
+    mod[["«entity»<br/>Consulta"]]
+    mascota[["«entity»<br/>Mascota"]]
+    historia[["«entity»<br/>HistoriaClinica"]]
+    profesional[["«entity»<br/>Veterinario"]]
+
+    vet --> ui
+    ui <--> cp
+    cp <--> api
+    api --> aut
+    aut --> reg
+    reg <--> val
+    reg --> mod
+    reg --> mascota
+    reg --> historia
+    aut --> profesional
+    val --> mod
+    reg --> exc
+    exc --> api
+
+    classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray:4 3
+    classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a
+    classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
+    class vet actor
+    class ui boundary
+    class cp,api,aut,reg,val,exc controller
+    class mod,mascota,historia,profesional entity
 
 
 ---
