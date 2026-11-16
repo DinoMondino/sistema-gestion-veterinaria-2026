@@ -66,44 +66,48 @@ Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**Indi
 
 ### 2.1 Diagrama de Robustez
 
-```mermaid
+
 flowchart TB
     vet["Médico Veterinario<br/>(actor)"]
+
     ui(["«boundary»<br/>FormularioNuevaConsulta"])
+
     cp(("«controller»<br/>ControladorPantalla"))
-    api(("«controller»<br/>ControladorREST"))
-    aut(("«controller»<br/>AutenticacionAutorizacion"))
+    rest(("«controller»<br/>ControladorREST"))
     reg(("«controller»<br/>ServicioRegistroClinico"))
     val(("«controller»<br/>ValidacionRegistrosClinicos"))
-    exc(("«controller»<br/>GestionExcepciones"))
-    mod[["«entity»<br/>Consulta"]]
+    repo(("«controller»<br/>RepositorioClinico"))
+
     mascota[["«entity»<br/>Mascota"]]
     historia[["«entity»<br/>HistoriaClinica"]]
-    profesional[["«entity»<br/>Veterinario"]]
+    consulta[["«entity»<br/>Consulta"]]
 
     vet --> ui
     ui <--> cp
-    cp <--> api
-    api --> aut
-    aut --> reg
+    cp <--> rest
+    rest <--> reg
+
+    reg <--> repo
     reg <--> val
-    reg --> mod
-    reg --> mascota
-    reg --> historia
-    aut --> profesional
-    val --> mod
-    reg --> exc
-    exc --> api
+    reg --> consulta
+
+    repo --> mascota
+    repo --> historia
+    repo --> consulta
+
+    mascota -.->|"tiene 1 historia"| historia
+    historia -.->|"contiene 0..* consultas"| consulta
 
     classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray:4 3
     classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
     classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a
     classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
+
     class vet actor
     class ui boundary
-    class cp,api,aut,reg,val,exc controller
-    class mod,mascota,historia,profesional entity
-```
+    class cp,rest,reg,val,repo controller
+    class mascota,historia,consulta entity
+
 
 
 
