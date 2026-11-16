@@ -269,3 +269,92 @@ sequenceDiagram
 | **Obtener y guardar la mascota con su historia** | `RepositorioMascotas` | Alta cohesión y bajo acoplamiento | El servicio no sabe cómo se guarda. |
 | **Saber cuál es su historia clínica** | `Mascota` | Experto en información | Tiene la relación 1 a 1 con su historia. |
 | **Crear la consulta y agregarla a su historial** | `HistoriaClinica` | Creador | Contiene y «registra» consultas (modelo del TP1). |
+
+---
+
+## Paso 5 — Modelo de Clases (HU-01)
+
+### Modelo de Clases Derivado de las Secuencias
+
+```mermaid
+classDiagram
+    direction TB
+
+    class ServicioRegistroClinico {
+        +repositorio: RepositorioClinico
+        +validador: ValidacionRegistrosClinicos
+        +registrar(mascota_id, datos) ResultadoRegistro
+    }
+
+    class ValidacionRegistrosClinicos {
+        +validar(datos) tuple
+    }
+
+    class ResultadoRegistro {
+        +estado: str
+        +errores: dict
+        +consulta: Consulta
+    }
+
+    class RepositorioClinico {
+        <<abstract>>
+        +obtener_contexto(mascota_id)*
+        +guardar_consulta(consulta) Consulta*
+        +listar_consultas(historia_id) list*
+    }
+
+    class RepositorioClinicoEnMemoria {
+        -_lock: Lock
+        +mascotas: dict
+        +historias: dict
+        +veterinario_demo: Veterinario
+        -_consultas: list
+        -_siguiente_id: int
+        +obtener_contexto(mascota_id)
+        +guardar_consulta(consulta) Consulta
+        +listar_consultas(historia_id) list
+    }
+
+    class Consulta {
+        +id: int
+        +historia_id: int
+        +veterinario_id: int
+        +fecha: date
+        +peso: Decimal
+        +sintomas: str
+        +diagnostico: str
+        +observaciones: str
+    }
+
+    class Mascota {
+        +id: int
+        +nombre: str
+        +especie: str
+        +peso_actual: Decimal
+    }
+
+    class HistoriaClinica {
+        +id: int
+        +mascota_id: int
+    }
+
+    class Veterinario {
+        +id: int
+        +nombre: str
+    }
+
+    ServicioRegistroClinico --> RepositorioClinico : utiliza
+    ServicioRegistroClinico --> ValidacionRegistrosClinicos : valida
+    ServicioRegistroClinico ..> ResultadoRegistro : crea
+    ServicioRegistroClinico ..> Consulta : crea
+
+    ResultadoRegistro --> Consulta : resultado opcional
+
+    RepositorioClinicoEnMemoria --|> RepositorioClinico : hereda
+
+    RepositorioClinico ..> Consulta : almacena
+    RepositorioClinicoEnMemoria --> Mascota : mantiene
+    RepositorioClinicoEnMemoria --> HistoriaClinica : mantiene
+    RepositorioClinicoEnMemoria --> Veterinario : demostracion
+    RepositorioClinicoEnMemoria --> Consulta : almacena
+```
