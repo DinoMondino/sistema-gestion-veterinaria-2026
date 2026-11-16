@@ -66,16 +66,44 @@ Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**Indi
 
 ### 3.3 Diagrama de Robustez
 
-flowchart TB vet["Médico Veterinario<br />(actor)"] ui(["«boundary»<br />FormularioNuevaConsulta"]) cp(("«controller»<br />ControladorPantalla")) api(("«controller»<br />ControladorREST")) aut(("«controller»<br />AutenticacionAutorizacion")) reg(("«controller»<br />ServicioRegistroClinico")) val(("«controller»<br />ValidacionRegistrosClinicos")) exc(("«controller»<br />GestionExcepciones")) mod[["«entity»<br />Consulta"]] mascota[["«entity»<br />Mascota"]] historia[["«entity»<br />HistoriaClinica"]] profesional[["«entity»<br />Veterinario"]] vet --&gt; ui ui &lt;--&gt; cp cp &lt;--&gt; api api --&gt; aut aut --&gt; reg reg &lt;--&gt; val reg --&gt; mod reg --&gt; mascota reg --&gt; historia aut --&gt; profesional val --&gt; mod reg --&gt; exc exc --&gt; api classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray:4 3 classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a class vet actor class ui boundary class cp,api,aut,reg,val,exc controller class mod,mascota,historia,profesional entity
+
 
 
 ---
 
 ### 3.4 Ubicación de Reglas de Negocio
 
+| Regla                                                                  | Responsable                                    | Justificación                                                            |
+| ---------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------ |
+| **RN-01:** La fecha obligatoria no puede estar vacía y debe ser válida | `ValidacionRegistrosClinicos`                  | Centraliza las validaciones autoritativas definidas por RF-10.           |
+| **RN-02:** El peso debe ser un número positivo                         | `ValidacionRegistrosClinicos`                  | Verifica el rango permitido para el dato clínico.                        |
+| **RN-03:** No se registra una consulta con datos inválidos             | `ServicioRegistroClinico`                      | Coordina el registro y evita invocar la persistencia cuando hay errores. |
+| **RN-04:** Cada error debe identificar el campo y su motivo            | `ValidacionRegistrosClinicos`                  | Genera los errores por campo, conforme a RF-11.                          |
+| **RN-05:** Los datos cargados deben conservarse ante el rechazo        | `ControladorPantalla` y `Modelo de formulario` | Conservan el estado del formulario, conforme a EC-01 y DA-02.            |
+
+---
+
+| Elemento del diagrama           | Componente del TP3                                                                | Capa o rol                                |
+| ------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
+| **FormularioNuevaConsulta**     | `Vistas`                                                                          | Vista — MVC (Interfaz Web)                |
+| **ControladorPantalla**         | `Controladores de pantalla`; utiliza `Modelo de formulario` y `Cliente de la API` | Controlador y apoyo — MVC (Interfaz Web)  |
+| **ControladorREST**             | `Controladores REST`                                                              | Presentación — API Clínica                |
+| **AutenticacionAutorizacion**   | `Autenticación y autorización`                                                    | Transversal — API Clínica                 |
+| **ServicioRegistroClinico**     | `Servicio de registro clínico`                                                    | Servicios — API Clínica                   |
+| **ValidacionRegistrosClinicos** | `Validación de registros clínicos`                                                | Servicios — API Clínica                   |
+| **GestionExcepciones**          | `Gestión de excepciones`                                                          | Transversal — API Clínica                 |
+| **Consulta**                    | `Validación de registros clínicos` / `Servicio de registro clínico`               | Entidad de dominio utilizada en servicios |
+| **Mascota**                     | `Servicio de registro clínico`                                                    | Entidad de dominio                        |
+| **HistoriaClinica**             | `Servicio de registro clínico`                                                    | Entidad de dominio                        |
+| **Veterinario**                 | `Autenticación y autorización`                                                    | Entidad de dominio del profesional        |
+
 ---
 
 ### 3.5 Diagramas de Secuencia
+
+
+
+---
 
 #### Secuencia A: Camino de Éxito (Edición Versionada Atómica con Auditoría)
 
