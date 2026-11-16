@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VetGestión | Nueva consulta</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='hu01.css') }}">
+  <script src="{{ url_for('static', filename='hu01.js') }}" defer></script>
+</head>
+<body data-mascota-id="{{ mascota_id }}">
+  <main class="contenedor">
+    <header><p class="etiqueta">VetGestión · HU-01</p><h1>Nueva consulta médica</h1>
+      <p id="paciente">Cargando paciente…</p></header>
+    <div id="mensaje" role="status" aria-live="polite"></div>
+    <form id="consulta" novalidate>
+      <div class="columnas">
+        <div class="campo"><label for="fecha">Fecha de atención *</label>
+          <input id="fecha" name="fecha" type="date" aria-describedby="error-fecha">
+          <small id="error-fecha" class="error"></small></div>
+        <div class="campo"><label for="peso">Peso actual (kg) *</label>
+          <input id="peso" name="peso" type="text" inputmode="decimal" placeholder="Ej.: 6.8" aria-describedby="error-peso">
+          <small id="error-peso" class="error"></small></div>
+      </div>
+      <div class="campo"><label for="sintomas">Síntomas y motivo *</label>
+        <textarea id="sintomas" name="sintomas" rows="3" aria-describedby="error-sintomas"></textarea>
+        <small id="error-sintomas" class="error"></small></div>
+      <div class="campo"><label for="diagnostico">Diagnóstico preliminar *</label>
+        <input id="diagnostico" name="diagnostico" aria-describedby="error-diagnostico">
+        <small id="error-diagnostico" class="error"></small></div>
+      <div class="campo"><label for="observaciones">Observaciones adicionales</label>
+        <textarea id="observaciones" name="observaciones" rows="3"></textarea></div>
+      <button type="submit" id="guardar">Guardar Consulta</button>
+      <p class="ayuda">* Campos obligatorios. Ante un error no se borra lo ingresado.</p>
+    </form>
+    <section class="historial"><h2>Consultas guardadas en esta sesión</h2><ul id="consultas"></ul></section>
+    <footer>Demostración académica · Datos ficticios · Persistencia en memoria</footer>
+  </main>
+</body>
+</html>
