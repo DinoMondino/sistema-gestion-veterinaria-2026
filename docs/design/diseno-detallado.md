@@ -299,8 +299,8 @@ classDiagram
     class RepositorioClinico {
         <<abstract>>
         +obtener_contexto(mascota_id)*
-        +guardar_consulta(consulta) Consulta*
-        +listar_consultas(historia_id) list*
+        +guardar_consulta(consulta)*
+        +listar_consultas(historia_id)*
     }
 
     class RepositorioClinicoEnMemoria {
@@ -311,8 +311,8 @@ classDiagram
         -_consultas: list
         -_siguiente_id: int
         +obtener_contexto(mascota_id)
-        +guardar_consulta(consulta) Consulta
-        +listar_consultas(historia_id) list
+        +guardar_consulta(consulta)
+        +listar_consultas(historia_id)
     }
 
     class Consulta {
@@ -344,17 +344,17 @@ classDiagram
     }
 
     ServicioRegistroClinico --> RepositorioClinico : utiliza
-    ServicioRegistroClinico --> ValidacionRegistrosClinicos : valida
+    ServicioRegistroClinico --> ValidacionRegistrosClinicos : utiliza
     ServicioRegistroClinico ..> ResultadoRegistro : crea
     ServicioRegistroClinico ..> Consulta : crea
 
     ResultadoRegistro --> Consulta : resultado opcional
 
-    RepositorioClinicoEnMemoria --|> RepositorioClinico : hereda
+    RepositorioClinicoEnMemoria --|> RepositorioClinico
 
-    RepositorioClinico ..> Consulta : almacena
-    RepositorioClinicoEnMemoria --> Mascota : mantiene
-    RepositorioClinicoEnMemoria --> HistoriaClinica : mantiene
+    RepositorioClinicoEnMemoria --> Mascota : almacena
+    RepositorioClinicoEnMemoria --> HistoriaClinica : almacena
     RepositorioClinicoEnMemoria --> Veterinario : demostracion
     RepositorioClinicoEnMemoria --> Consulta : almacena
+
 ```
