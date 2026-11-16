@@ -158,37 +158,29 @@ sequenceDiagram
     participant UI as Formulario<br/>NuevaConsulta
     participant CP as Controlador<br/>Pantalla
     participant REST as Controlador<br/>REST
-    participant AUT as Autenticacion<br/>Autorizacion
-    participant SRC as ServicioRegistro<br/>Clinico
-    participant VAL as ValidacionRegistros<br/>Clinicos
-    participant RM as Repositorio<br/>Mascotas
-    participant M as Mascota
-    participant HC as Historia<br/>Clinica
+    participant SRC as ServicioRegistroClinico
+    participant VAL as ValidacionRegistrosClinicos
+    participant RC as RepositorioClinico
+
     Vet->>UI: presiona «Guardar Consulta» (datos válidos)
-    UI->>CP: guardar_consulta(mascota_id, campos)
-    CP->>CP: conservar_datos(campos)
-    CP->>REST: registrar_consulta(mascota_id, campos, token)<br/>POST /api/v1/consultas (JSON/HTTPS)
-    REST->>AUT: verificar_permisos(token)
-    create participant V as Veterinario
-    AUT->>V: Veterinario(id, nombre, rol, matricula)
-    AUT->>V: puede_registrar_consultas()
-    V-->>AUT: sí
-    AUT-->>REST: veterinario
-    REST->>REST: leer_datos(campos)
-    REST->>SRC: registrar_consulta(mascota_id, datos, veterinario)
+    UI->>CP: evento submit del formulario
+    CP->>CP: leer datos con FormData(form)
+    CP->>REST: POST /api/mascotas/{mascota_id}/consultas (JSON)
+    REST->>REST: request.get_json()
+    REST->>SRC: registrar(mascota_id, datos)
+    SRC->>RC: obtener_contexto(mascota_id)
+    RC-->>SRC: (mascota, historia)
     SRC->>VAL: validar(datos)
-    VAL-->>SRC: errores (ninguno)
-    SRC->>RM: mascota(mascota_id)
-    RM-->>SRC: mascota
-    SRC->>M: historia_clinica()
-    M-->>SRC: historia
-    SRC->>HC: registrar_consulta(veterinario.id, datos)
+    VAL-->>SRC: (datos_normalizados, errores_vacios)
     create participant C as Consulta
-    HC->>C: Consulta(veterinario_id, datos)
-    SRC->>RM: guardar(mascota)
-    SRC-->>REST: consulta registrada
-    REST-->>CP: RespuestaApi(201)
-    CP->>UI: mostrar_confirmacion()
+    SRC->>C: Consulta(id=0, historia_id, veterinario_id=1, datos_normalizados)
+    SRC->>RC: guardar_consulta(consulta)
+    RC-->>SRC: consulta con ID asignado
+    SRC-->>REST: ResultadoRegistro("creado", {}, consulta)
+    REST-->>CP: HTTP 201, JSON de confirmación
+    CP->>CP: mostrar mensaje y ejecutar form.reset()
+    CP->>CP: cargarConsultas()
+    CP-->>UI: formulario actualizado
     UI-->>Vet: informa que la consulta se guardó
 ```
 
