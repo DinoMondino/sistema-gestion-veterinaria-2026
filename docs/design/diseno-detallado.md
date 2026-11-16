@@ -5,84 +5,44 @@
 
 ---
 
-## 1. Introducción
+## Parte A — Diseño detallado de la HU 
+
+### Paso 1 — Ficha de la HU:  
 
 ### 1.1 Propósito
-El propósito de este documento es especificar el **Diseño Detallado** para la historia de usuario **HU-02 ("Edición de entradas previas del historial clínico")**, perteneciente al proceso central de **Gestión Clínica e Historial**.
-**Relevancia de Dominio:** A diferencia de un alta simple de datos, la HU-02 exige lógica de dominio compleja: validación de autoría, inalterabilidad legal de registros clínicos, versionado de entidades mediante enlaces jerárquicos y persistencia atómica transaccional con bitácora de auditoría.
-
-A partir de la arquitectura ya definida, se detallan las tres dimensiones de la HU (funcionalidad, estructura y calidad), los modelos de análisis (diagrama de robustez), los modelos dinámicos (diagramas de secuencia), el modelo estático (diagrama de clases con criterios GRASP) y las matrices de trazabilidad y verificación de coherencia.
+El propósito de este documento es especificar el **Diseño Detallado** para la historia de usuario **HU-01 ("Manejo de datos obligatorios incompletos o con formato inválido")**, perteneciente al proceso central de **Gestión Clínica e Historial**.
+**Relevancia de Dominio:** HU-01 exige validación de autoría, completitud de registros clínicos, versionado de entidades mediante enlaces jerárquicos y persistencia atómica transaccional con bitácora de auditoría.
 
 ---
 
-### 1.2 Historia de Usuario Elegida: HU-02
-- **Identificador:** HU-02 (derivada de CU-01 "Registrar Atención y Evolución Clínica", Slice A2).
-- **Nombre:** Edición de entradas previas del historial clínico.
+### 1.2 Historia de Usuario Elegida: HU-01
+- **Identificador:** HU-01 (Deriva de: CU-01, slice A1 (RF-10 y RF-11)).
+- **Nombre:** Manejo de datos obligatorios incompletos o con formato inválido.
 - **Enunciado:**
-  > **Como** médico/a veterinario/a,  
-  > **quiero** corregir una entrada previa de la historia clínica que haya registrado de mi autoría,  
-  > **para** mantener la información clínica actualizada sin perder la trazabilidad de los cambios.
+  Como Médico Veterinario, quiero recibir una notificación precisa cuando intento guardar una consulta con campos obligatorios vacíos o datos con formato inválido, para poder corregirlos y asegurar la integridad de la historia clínica sin perder la información cargada.
 
 ---
 
 ### 1.3 Criterios de Aceptación (Given-When-Then)
-1. **Flujo de Éxito (Edición y Versionado):**
-   - **Given:** El/la veterinario/a inició sesión y seleccionó una entrada de la historia clínica de su autoría.
-   - **When:** Modifica la información de la entrada, ingresa el motivo de la corrección y confirma la operación.
-   - **Then:** El sistema verifica que el usuario tenga permisos para realizar la corrección y que sea el autor original de la entrada; valida que el motivo no esté vacío; conserva la versión original y crea una nueva versión vinculada con la anterior.
-   - **And:** El sistema registra en la auditoría el autor de la corrección, la fecha y hora, la versión anterior, la nueva versión y el motivo informado.
-   - **And:** La nueva versión y el registro de auditoría se guardan en una única transacción. Si la operación falla, no se confirma ninguno de los dos cambios.
-   - **And:** El historial muestra la entrada como modificada, sin eliminar ni sobrescribir la versión original.
 
-2. **Flujos de Rechazo:**
-   - **And (Rechazo por falta de motivo o autorización):** Si el motivo está vacío o el usuario no es el autor original / carece de permisos de rol clínico, la operación se rechaza, se registra el intento fallido en auditoría y no se modifica el historial.
----
-
-### 1.4 Siglas y Acrónimos
-- **ACID:** Atomicidad, Consistencia, Aislamiento y Durabilidad (Atomicity, Consistency, Isolation, Durability).
-- **API:** Interfaz de Programación de Aplicaciones (Application Programming Interface).
-- **C4:** Modelo de arquitectura Contexto, Contenedores, Componentes y Código.
-- **DA:** Decisión de Arquitectura.
-- **DTO:** Objeto de Transferencia de Datos (Data Transfer Object).
-- **EC:** Escenario de Calidad.
-- **GRASP:** Patrones de Software Generales para Asignación de Responsabilidades (General Responsibility Assignment Software Patterns).
-- **GWT:** Esquema Given-When-Then para Criterios de Aceptación.
-- **HU:** Historia de Usuario.
-- **MVC:** Modelo-Vista-Controlador.
-- **ORM:** Mapeo Objeto-Relacional (Object-Relational Mapping).
-- **RBAC:** Control de Acceso Basado en Roles (Role-Based Access Control).
-- **REST:** Transferencia de Estado Representacional (Representational State Transfer).
+Given: El veterinario está completando el formulario de nueva consulta y escribe un valor negativo en el campo de peso o deja la fecha en blanco.
+When: El veterinario presiona el botón "Guardar Consulta".
+Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y muestra un mensaje indicando con precisión el motivo del fallo.
 
 ---
 
 ## 2. Relación con la Arquitectura
 
 ### 2.1 Tabla de Coherencia con el TP3
-
-| Dimensión | Contenido de la HU-02 | Referencia TP3 |
-| :--- | :--- | :--- |
-| **Funcionalidad** | Edición corregida de entrada clínica previa; validación de autoría y motivo obligatorio; creación de nueva versión y registro en auditoría. | CU-01 Slice A2, RF-08, RF-01 a RF-05. |
-| **Estructura** | Contenedores `Interfaz Web` y `Backend API REST`. Capas: Presentación (`ControladorConsulta`), Servicios (`ServicioRegistroClinico`), Datos (`RepositorioConsultaSQLAlchemy`, `RepositorioAuditoriaSQLAlchemy`). | `arquitectura.md` (Secc. 6 y 7). |
-| **Calidad** | **EC-04** (Responsabilidad / Auditoría): 100% de ediciones reconstruibles. **EC-02** (Integridad): rechazo de accesos no autorizados. **EC-03** (Recuperación): transacciones atómicas. | `quality-scenarios.md`, `arquitectura.md` (Secc. 4). |
-| **Tácticas & Decisiones** | Táctica *Registro de Auditoría* + *Versionado Inmutable* + *Transacciones SQL*. Respaldado por **DA-06**, **DA-03** y **DA-02**. | `arquitectura.md` (Secc. 5 y 9). |
-| **Dominio** | Entidades `Veterinario`, `ConsultaClinica`, `VersionConsulta` y `RegistroAuditoria`. | `modelo_de_dominio_inicial.md`. |
-| **Verificación** | Pruebas de integración atómicas: simulación de edición válida, rechazo por autor ajeno, rechazo por motivo vacío y rollback por error de persistencia. | `arquitectura.md` (Secc. 5.5). |
-
----
-
-### 2.2 Componentes y Capas Atravesadas
-
 ```
-[ Contenedor: Interfaz Web ]
-  └── Capa Presentación Cliente: VistaHistoriaClinica -> ControladorPantallaEdicion -> ModeloFormularioEdicion
+| Dimensión | Contenido |
+| :--- | :--- |
+| **Funcionalidad** | HU-01, derivada de CU-01, slice A1; vinculada con RF-10 y RF-11. Validar los datos antes de guardar, rechazar los inválidos e informar los errores. |
+| **Estructura** | Estilo cliente-servidor. Patrón MVC en la interfaz web y capas en la API clínica. Intervienen Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API, Controladores REST, Autenticación y autorización, Servicio de registro clínico, Validación de registros clínicos y Gestión de excepciones. Componente principal: Validación de registros clínicos, en la capa de servicios de la API. |
+| **Calidad** | EC-01: Operabilidad. Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga. DA-02: interfaz MVC con conservación del formulario y devolución conjunta de errores por campo. |
+| **Dominio** | Se utilizan Veterinario, Mascota, HistoriaClinica y Consulta para representar el profesional, el paciente, su historial y los datos de la consulta que se intenta registrar. |
+| **Verificación** | Para la HU: ingresar peso negativo o fecha vacía y comprobar rechazo, mensaje específico, campo resaltado, ausencia de almacenamiento y conservación de datos. Para EC-01: comprobar 0 pérdidas de datos ante errores y medir el registro crítico en ≤ 45 segundos y ≤ 8 interacciones, con al menos 90 % de pruebas exitosas en las condiciones definidas por el escenario. |
 
-[ Contenedor: Backend API REST ]
-  ├── Capa Presentación HTTP: AuthMiddleware -> ConsultaController (Flask Route)
-  ├── Capa Servicios (Lógica): ServicioRegistroClinico -> ValidacionRegistroClinico
-  └── Capa Datos e Integración: RepositorioConsultaORM -> RepositorioAuditoriaORM
-
-[ Contenedor: Base de Datos PostgreSQL ]
-  └── Tablas: consultas_versionadas, log_auditoria
 ```
 
 ---
@@ -91,108 +51,22 @@ A partir de la arquitectura ya definida, se detallan las tres dimensiones de la 
 
 ### 3.1 Entidades del Modelo de Dominio Intervinientes
 
-Entidades involucradas en HU-02:
-
-| Entidad del Modelo (TP1) | ¿Interviene? | Qué usa la HU-02 de ella | Tipo de Operación |
-| :--- | :--- | :--- | :--- |
-| **Veterinario** | **Sí** | Identificador de usuario, rol clínico y verificación de autoría de la consulta original. | Consulta |
-| **ConsultaClinica** | **Sí** | Identificador único de atención clínica, paciente asociado y puntero a la versión activa vigente. | Consulta y Modificación (puntero a versión) |
-| **VersionConsulta** | **Sí** | Datos clínicos (peso, síntomas, diagnóstico, prescripción), número de versión, versión padre, autor y motivo de edición. | **Crea** (nueva versión inmutable) |
-| **RegistroAuditoria** | **Sí** | Evento de edición/rechazo, ID de versión previa, ID de versión nueva, usuario, timestamp y motivo. | **Crea** (inserción append-only) |
-| **Paciente / Mascotas** | **Sí** | Identificador y validación de contexto para recuperar la historia clínica. | Consulta |
-| **Tutor / Dueño** | No | Los datos del tutor no intervienen en el flujo de edición clínica. | — |
-| **Turno / Pago** | No | Módulo administrativo fuera del alcance de la HU-02. | — |
-
-**Actualización al Modelo de Dominio del TP1:** Para soportar el requerimiento de versionado inmutable (**DA-06**), la entidad `ConsultaClinica` se descompone en una cabecera (`ConsultaClinica`) y una lista de versiones inmutables (`VersionConsulta`), enlazadas mediante `parent_version_id`.
+Entidades involucradas en HU-01:
+| Entidad del TP1 | ¿Interviene? | Qué utiliza la HU de ella | La HU la... | | :--- | :--- | :--- | :--- | | \*\*Usuario\*\* | Indirectamente | Identidad y rol del usuario autenticado, mediante Veterinario | Consulta | | \*\*Secretaria\*\* | No | No participa en el registro clínico de esta HU | — | | \*\*Veterinario\*\* | Sí | Profesional que intenta registrar la consulta | Consulta | | \*\*DuenioMascota\*\* | No | Los datos del tutor no intervienen en la validación | — | | \*\*Mascota\*\* | Sí | Identificación del paciente al que corresponde la consulta | Consulta | | \*\*HistoriaClinica\*\* | Sí | Historial al que se asociaría la consulta | Consulta (no modifica) | | \*\*Consulta\*\* | Sí | Fecha y demás datos clínicos, incluido el peso que debe validarse | Se intenta crear (el guardado se rechaza) | | \*\*Vacuna\*\* | No | No se validan vacunas en este escenario | — | | \*\*AplicacionVacuna\*\* | No | No se registra una aplicación de vacuna | — | | \*\*Turno\*\* | No | No se gestiona la agenda | — | | \*\*Prescripcion\*\* | No | No se registra una prescripción | — | | \*\*ReaccionAdversaRegistrada\*\* | No | No se registra una reacción adversa | — | | \*\*Pago\*\* | No | No corresponde al proceso de validación clínica | — | | \*\*PatologiaReferencia\*\* | No | No se realiza una consulta a OMIA | — |
 
 ---
 
 ### 3.2 Análisis Tridimensional
 
-```
-                             ┌──────────────────────────────────────────────────────────┐
-                             │               ANÁLISIS TRIDIMENSIONAL HU-02              │
-                             └────────────────────────────┬─────────────────────────────┘
-                                                          │
-         ┌────────────────────────────────────────────────┼────────────────────────────────────────┐
-         │                                                │                                        │
-         ▼                                                ▼                                        ▼
-┌────────────────────────────────┐            ┌────────────────────────────────┐       ┌────────────────────────────────┐
-│   DIMENSIÓN FUNCIONALIDAD      │            │     DIMENSIÓN ESTRUCTURA       │       │      DIMENSIÓN CALIDAD         │
-├────────────────────────────────┤            ├────────────────────────────────┤       ├────────────────────────────────┤
-│ • Criterio 1: Edición válida   │            │ • Frontera: PantallaEdicion    │       │ • EC-04 (Responsabilidad):     │
-│   crea versión vinculada y     │            │ • Control: ControladorConsulta │       │   100% ediciones auditables    │
-│   guarda motivo obligatorio.   │            │   + AuthMiddleware             │       │   con autor, fecha y motivo.   │
-│ • Criterio 2: Rechazo por      │            │ • Servicios: ServicioRegistro  │       │ • EC-02 (Integridad):          │
-│   motivo vacío o autoría       │            │   Clinico + AuditoriaService   │       │   Verificación estricta de     │
-│   inválida sin alterar datos.  │            │ • Dominio: VersionConsulta +   │       │   autoría y rol en backend.    │
-│ • Criterio 3: Inalterabilidad  │            │   RegistroAuditoria            │       │ • EC-03 (Recuperación):        │
-│   de versiones previas.        │            │ • Persistencia: Repositorios   │       │   Transacción SQL atómica.     │
-└────────────────────────────────┘            └────────────────────────────────┘       └────────────────────────────────┘
-```
 
 ---
 
 ### 3.3 Diagrama de Robustez
 
-El diagrama de robustez (ICONIX / Jacobson) analiza la lógica de la HU-02 verificando las reglas de conexión: los actores solo interactúan con pantallas (boundaries), las pantallas solo llaman a controladores (controllers), los controladores coordinan y acceden a las entidades (entities), y las entidades no se acceden directamente desde las fronteras.
-
-```mermaid
-flowchart LR
-    vet["Veterinario/a<br/>(actor)"]
-    
-    uiEdicion(["«boundary»<br/>PantallaEdicionConsulta"])
-    
-    ctrlEdicion(("«controller»<br/>ControladorConsulta"))
-    ctrlAuth(("«controller»<br/>AuthMiddleware"))
-    ctrlAudit(("«controller»<br/>AuditoriaService"))
-    repoConsulta(("«controller»<br/>RepositorioConsulta"))
-    repoAudit(("«controller»<br/>RepositorioAuditoria"))
-    
-    entVet[["«entity»<br/>Veterinario"]]
-    entConsulta[["«entity»<br/>ConsultaClinica"]]
-    entVersion[["«entity»<br/>VersionConsulta"]]
-    entLog[["«entity»<br/>RegistroAuditoria"]]
-
-    vet --> uiEdicion
-    uiEdicion --> ctrlAuth
-    ctrlAuth --> ctrlEdicion
-    
-    ctrlEdicion --> repoConsulta
-    ctrlEdicion --> repoAudit
-    ctrlEdicion --> ctrlAudit
-    
-    repoConsulta --> entConsulta
-    repoConsulta --> entVersion
-    repoAudit --> entLog
-    
-    ctrlEdicion --> entVet
-    ctrlEdicion --> entConsulta
-    ctrlEdicion --> entVersion
-    ctrlEdicion --> entLog
-
-    classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray: 4 3
-    classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
-    classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a
-    classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
-
-    class vet actor
-    class uiEdicion boundary
-    class ctrlEdicion,ctrlAuth,ctrlAudit,repoConsulta,repoAudit controller
-    class entVet,entConsulta,entVersion,entLog entity
-```
 
 ---
 
 ### 3.4 Ubicación de Reglas de Negocio
-
-| Regla de Negocio | Dónde Vive (Capa / Elemento) | Justificación GRASP / Arquitectura |
-| :--- | :--- | :--- |
-| **RN-01: Verificación de Autoría** | `ServicioRegistroClinico` / `Veterinario` | **Experto en Información**: El servicio verifica que el `usuario_id` autenticado coincida exactamente con el `autor_id` de la última versión activa de la consulta. |
-| **RN-02: Motivo Obligatorio No Vacío** | `VersionConsulta` (Entidad de Dominio) | **Alta Cohesión / Validador de Dominio**: La entidad rechaza su propia construcción si el string de `motivo_edicion` es nulo o contiene solo espacios. |
-| **RN-03: Inalterabilidad y Versionado Enlazado** | `VersionConsulta` / `ConsultaClinica` | **Information Expert**: La versión previa no se modifica. Se crea una instancia con `numero_version = version_anterior + 1` y `parent_version_id = version_anterior.id`. |
-| **RN-04: Transaccionalidad Atómica (Atomicity)** | `AccesoADatosORM` (`UnitOfWork`) | **DA-03 / EC-03**: La inserción de la nueva `VersionConsulta` y del `RegistroAuditoria` se ejecutan dentro del mismo bloque `BEGIN TRANSACTION ... COMMIT`. Si falla la auditoría, se ejecuta `ROLLBACK`. |
-| **RN-05: Sanitización e Inmutable de Auditoría** | `ServicioAuditoria` | **Seguridad / Separación de Entidades**: El log de auditoría se guarda en una tabla append-only inaccesible para modificaciones por API. |
 
 ---
 
@@ -200,94 +74,12 @@ flowchart LR
 
 #### Secuencia A: Camino de Éxito (Edición Versionada Atómica con Auditoría)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Vet as Veterinario/a
-    participant UI as PantallaEdicionConsulta
-    participant Auth as AuthMiddleware
-    participant CC as ControladorConsulta
-    participant SR as ServicioRegistroClinico
-    participant V as Veterinario
-    participant VC as VersionConsulta
-    participant RA as ServicioAuditoria
-    participant DB as RepositorioConsultaORM
-
-    Vet->>UI: Ingresa cambios y motivo ("Corrección diagnóstico por laboratorio")
-    UI->>Auth: PUT /api/v1/consultas/{id} (DTO_Edicion, Token_JWT)
-    Auth->>Auth: Validar JWT y Rol == 'Veterinario'
-    Auth->>CC: editar_consulta(consulta_id, DTO_Edicion, usuario_id)
-    
-    CC->>SR: corregir_entrada(consulta_id, datos_nuevos, motivo, usuario_id)
-    SR->>DB: obtener_consulta(consulta_id)
-    DB-->>SR: consulta_actual (con VersionConsulta activa)
-    
-    SR->>V: es_autor_original(consulta_actual.autor_id, usuario_id)
-    V-->>SR: True (Autorización confirmada)
-    
-    SR->>VC: crear_nueva_version(consulta_actual, datos_nuevos, motivo, usuario_id)
-    VC-->>SR: nueva_version (Version = N+1, Parent = Version_N)
-    
-    SR->>RA: generar_log_edicion(version_previa_id, nueva_version.id, usuario_id, motivo)
-    RA-->>SR: registro_auditoria
-    
-    SR->>DB: guardar_edicion_atomica(nueva_version, registro_auditoria)
-    Note over DB: Inicia Transacción SQL (BEGIN)
-    DB->>DB: INSERT INTO versiones_consulta ...
-    DB->>DB: INSERT INTO log_auditoria ...
-    DB-->>SR: Commit Exitoso (200 OK)
-    Note over DB: Finaliza Transacción (COMMIT)
-    
-    SR-->>CC: ResultadoEdicionDTO(exito=True, version=N+1)
-    CC-->>UI: 200 OK (JSON Confirmación)
-    UI-->>Vet: Muestra mensaje de éxito y consulta actualizada
-```
 
 ---
 
 #### Secuencia B: Caminos de Rechazo (Autoría Inválida / Motivo Vacío / Rollback)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Vet as Veterinario/a (No Autor / Motivo Vacío)
-    participant UI as PantallaEdicionConsulta
-    participant Auth as AuthMiddleware
-    participant CC as ControladorConsulta
-    participant SR as ServicioRegistroClinico
-    participant RA as ServicioAuditoria
-    participant DB as RepositorioConsultaORM
 
-    alt Caso B1: Usuario no es el autor original de la entrada
-        Vet->>UI: Intenta editar consulta ajena
-        UI->>Auth: PUT /api/v1/consultas/{id}
-        Auth->>CC: editar_consulta(...)
-        CC->>SR: corregir_entrada(...)
-        SR->>SR: Validar autoría (usuario_id != autor_original)
-        SR->>RA: registrar_intento_no_autorizado(usuario_id, consulta_id)
-        RA->>DB: guardar_log_rechazo()
-        SR-->>CC: ErrorAutorizacionException("No es el autor original")
-        CC-->>UI: 403 Forbidden (Motivo: "Acceso denegado")
-        UI-->>Vet: Muestra alerta de error y bloquea el formulario
-    else Caso B2: Motivo de edición vacío
-        Vet->>UI: Confirma cambios con campo motivo en blanco
-        UI->>CC: editar_consulta(...)
-        CC->>SR: corregir_entrada(motivo="")
-        SR->>SR: Validar motivo (motivo.strip() == "")
-        SR-->>CC: MotivoInvalidoException("El motivo de la corrección es obligatorio")
-        CC-->>UI: 400 Bad Request (Campo 'motivo' resaltado en rojo)
-        UI-->>Vet: Muestra error y conserva los datos ingresados en pantalla
-    else Caso B3: Error en la Base de Datos (Fallo de Transacción)
-        SR->>DB: guardar_edicion_atomica(nueva_version, registro_auditoria)
-        Note over DB: BEGIN TRANSACTION
-        DB--xDB: Error de escritura en Disco / Conexión Pérdida
-        Note over DB: ROLLBACK AUTOMÁTICO (0 registros modificados)
-        DB-->>SR: TransactionRollbackException
-        SR-->>CC: ErrorPersistenciaException
-        CC-->>UI: 500 Internal Error (Modo degradado)
-        UI-->>Vet: Avisa problema de almacenamiento y conserva el borrador local
-    end
-```
 
 ---
 
