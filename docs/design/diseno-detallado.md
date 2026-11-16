@@ -66,6 +66,44 @@ Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**Indi
 
 ### 2.1 Diagrama de Robustez
 
+```mermaid
+flowchart TB
+    vet["Médico Veterinario<br/>(actor)"]
+    ui(["«boundary»<br/>FormularioNuevaConsulta"])
+    cp(("«controller»<br/>ControladorPantalla"))
+    api(("«controller»<br/>ControladorREST"))
+    aut(("«controller»<br/>AutenticacionAutorizacion"))
+    reg(("«controller»<br/>ServicioRegistroClinico"))
+    val(("«controller»<br/>ValidacionRegistrosClinicos"))
+    exc(("«controller»<br/>GestionExcepciones"))
+    mod[["«entity»<br/>Consulta"]]
+    mascota[["«entity»<br/>Mascota"]]
+    historia[["«entity»<br/>HistoriaClinica"]]
+    profesional[["«entity»<br/>Veterinario"]]
+
+    vet --> ui
+    ui <--> cp
+    cp <--> api
+    api --> aut
+    aut --> reg
+    reg <--> val
+    reg --> mod
+    reg --> mascota
+    reg --> historia
+    aut --> profesional
+    val --> mod
+    reg --> exc
+    exc --> api
+
+    classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray:4 3
+    classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a
+    classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
+    class vet actor
+    class ui boundary
+    class cp,api,aut,reg,val,exc controller
+    class mod,mascota,historia,profesional entity
+```
 
 
 
