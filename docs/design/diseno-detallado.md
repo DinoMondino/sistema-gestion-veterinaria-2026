@@ -31,32 +31,27 @@ Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y
 
 ---
 
-## 2. Relación con la Arquitectura
+### 1.4 Tabla de Coherencia con el TP3
 
-### 2.1 Tabla de Coherencia con el TP3
-```
-| Dimensión | Contenido |
-| :--- | :--- |
-| **Funcionalidad** | HU-01, derivada de CU-01, slice A1; vinculada con RF-10 y RF-11. Validar los datos antes de guardar, rechazar los inválidos e informar los errores. |
-| **Estructura** | Estilo cliente-servidor. Patrón MVC en la interfaz web y capas en la API clínica. Intervienen Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API, Controladores REST, Autenticación y autorización, Servicio de registro clínico, Validación de registros clínicos y Gestión de excepciones. Componente principal: Validación de registros clínicos, en la capa de servicios de la API. |
-| **Calidad** | EC-01: Operabilidad. Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga. DA-02: interfaz MVC con conservación del formulario y devolución conjunta de errores por campo. |
-| **Dominio** | Se utilizan Veterinario, Mascota, HistoriaClinica y Consulta para representar el profesional, el paciente, su historial y los datos de la consulta que se intenta registrar. |
-| **Verificación** | Para la HU: ingresar peso negativo o fecha vacía y comprobar rechazo, mensaje específico, campo resaltado, ausencia de almacenamiento y conservación de datos. Para EC-01: comprobar 0 pérdidas de datos ante errores y medir el registro crítico en ≤ 45 segundos y ≤ 8 interacciones, con al menos 90 % de pruebas exitosas en las condiciones definidas por el escenario. |
-
-```
+| Dimensión         | Contenido                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Funcionalidad** | HU-01, derivada de CU-01, slice A1; vinculada con RF-10 y RF-11\. Validar los datos antes de guardar, rechazar los inválidos e informar los errores.                                                                                                                                                                                                                                                            |
+| **Estructura**    | Estilo cliente-servidor. Patrón MVC en la interfaz web y capas en la API clínica. Intervienen Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API, Controladores REST, Autenticación y autorización, Servicio de registro clínico, Validación de registros clínicos y Gestión de excepciones. Componente principal: Validación de registros clínicos, en la capa de servicios de la API. |
+| **Calidad**       | EC-01: Operabilidad. Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga. DA-02: interfaz MVC con conservación del formulario y devolución conjunta de errores por campo.                                                                                                                                                                                                         |
+| **Dominio**       | Se utilizan Veterinario, Mascota, HistoriaClinica y Consulta para representar el profesional, el paciente, su historial y los datos de la consulta que se intenta registrar.                                                                                                                                                                                                                                    |
+| **Verificación**  | Para la HU: ingresar peso negativo o fecha vacía y comprobar rechazo, mensaje específico, campo resaltado, ausencia de almacenamiento y conservación de datos. Para EC-01: comprobar 0 pérdidas de datos ante errores y medir el registro crítico en ≤ 45 segundos y ≤ 8 interacciones, con al menos 90 % de pruebas exitosas en las condiciones definidas por el escenario.                                    |
 
 ---
 
-## 3. Diseño de la HU
-
-### 3.1 Entidades del Modelo de Dominio Intervinientes
+### 1.5 Entidades del Modelo de Dominio Intervinientes
 
 Entidades involucradas en HU-01:
-| Entidad del TP1 | ¿Interviene? | Qué utiliza la HU de ella | La HU la... | | :--- | :--- | :--- | :--- | | \*\*Usuario\*\* | Indirectamente | Identidad y rol del usuario autenticado, mediante Veterinario | Consulta | | \*\*Secretaria\*\* | No | No participa en el registro clínico de esta HU | — | | \*\*Veterinario\*\* | Sí | Profesional que intenta registrar la consulta | Consulta | | \*\*DuenioMascota\*\* | No | Los datos del tutor no intervienen en la validación | — | | \*\*Mascota\*\* | Sí | Identificación del paciente al que corresponde la consulta | Consulta | | \*\*HistoriaClinica\*\* | Sí | Historial al que se asociaría la consulta | Consulta (no modifica) | | \*\*Consulta\*\* | Sí | Fecha y demás datos clínicos, incluido el peso que debe validarse | Se intenta crear (el guardado se rechaza) | | \*\*Vacuna\*\* | No | No se validan vacunas en este escenario | — | | \*\*AplicacionVacuna\*\* | No | No se registra una aplicación de vacuna | — | | \*\*Turno\*\* | No | No se gestiona la agenda | — | | \*\*Prescripcion\*\* | No | No se registra una prescripción | — | | \*\*ReaccionAdversaRegistrada\*\* | No | No se registra una reacción adversa | — | | \*\*Pago\*\* | No | No corresponde al proceso de validación clínica | — | | \*\*PatologiaReferencia\*\* | No | No se realiza una consulta a OMIA | — |
+
+Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**IndirectamenteIdentidad y rol del usuario autenticado, mediante VeterinarioConsulta**Secretaria**NoNo participa en el registro clínico de esta HU—**Veterinario**SíProfesional que intenta registrar la consultaConsulta**DuenioMascota**NoLos datos del tutor no intervienen en la validación—**Mascota**SíIdentificación del paciente al que corresponde la consultaConsulta**HistoriaClinica**SíHistorial al que se asociaría la consultaConsulta (no modifica)**Consulta**SíFecha y demás datos clínicos, incluido el peso que debe validarseSe intenta crear (el guardado se rechaza)**Vacuna**NoNo se validan vacunas en este escenario—**AplicacionVacuna**NoNo se registra una aplicación de vacuna—**Turno**NoNo se gestiona la agenda—**Prescripcion**NoNo se registra una prescripción—**ReaccionAdversaRegistrada**NoNo se registra una reacción adversa—**Pago**NoNo corresponde al proceso de validación clínica—**PatologiaReferencia**NoNo se realiza una consulta a OMIA
 
 ---
 
-### 3.2 Análisis Tridimensional
+## Paso 2 — Análisis tridimensional 
 
 
 ---
