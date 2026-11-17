@@ -64,21 +64,18 @@ Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**Indi
 
 ---
 
-### 2.1 Diagrama de Robustez
-
 
 
 ## 2.1 Diagrama de Robustez
 
 ```mermaid
-flowchart TB
-    vet["Médico Veterinario (actor)"]
-    ui(["«boundary»<br/>FormularioNuevaConsulta"])
 
+flowchart TB
+    vet["Médico Veterinario<br/>(actor)"]
+
+    ui(["«boundary»<br/>FormularioNuevaConsulta"])
     cp(("«controller»<br/>ControladorPantalla"))
-    rest(("«controller»<br/>ControladorREST"))
-    reg(("«controller»<br/>ServicioRegistroClinico"))
-    val(("«controller»<br/>ValidacionRegistrosClinicos"))
+    api(["«boundary»<br/>ServicioRegistroClinico"])
     repo(("«controller»<br/>RepositorioClinico"))
 
     mascota[["«entity»<br/>Mascota"]]
@@ -87,12 +84,8 @@ flowchart TB
 
     vet --> ui
     ui <--> cp
-    cp <--> rest
-    rest <--> reg
-
-    reg <--> repo
-    reg <--> val
-    reg --> consulta
+    cp <--> api
+    api <--> repo
 
     repo --> mascota
     repo --> historia
@@ -107,9 +100,10 @@ flowchart TB
     classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
 
     class vet actor
-    class ui boundary
-    class cp,rest,reg,val,repo controller
+    class ui,api boundary
+    class cp,repo controller
     class mascota,historia,consulta entity
+
 ```
 
 
