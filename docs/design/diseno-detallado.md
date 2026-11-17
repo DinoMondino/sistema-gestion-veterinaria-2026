@@ -133,14 +133,12 @@ flowchart TB
 | **FormularioNuevaConsulta**     | `Vistas`                                                                          | Vista — MVC (Interfaz Web)                |
 | **ControladorPantalla**         | `Controladores de pantalla`; utiliza `Modelo de formulario` y `Cliente de la API` | Controlador y apoyo — MVC (Interfaz Web)  |
 | **ControladorREST**             | `Controladores REST`                                                              | Presentación — API Clínica                |
-| **AutenticacionAutorizacion**   | `Autenticación y autorización`                                                    | Transversal — API Clínica                 |
 | **ServicioRegistroClinico**     | `Servicio de registro clínico`                                                    | Servicios — API Clínica                   |
 | **ValidacionRegistrosClinicos** | `Validación de registros clínicos`                                                | Servicios — API Clínica                   |
-| **GestionExcepciones**          | `Gestión de excepciones`                                                          | Transversal — API Clínica                 |
-| **Consulta**                    | `Validación de registros clínicos` / `Servicio de registro clínico`               | Entidad de dominio utilizada en servicios |
-| **Mascota**                     | `Servicio de registro clínico`                                                    | Entidad de dominio                        |
-| **HistoriaClinica**             | `Servicio de registro clínico`                                                    | Entidad de dominio                        |
-| **Veterinario**                 | `Autenticación y autorización`                                                    | Entidad de dominio del profesional        |
+| **RepositorioClinico**          | `Acceso a datos`                                                                  | Datos e integración — API clínica         |
+| **Consulta**                    | `Validación de registros clínicos` / `Servicio de registro clínico`               | Entidad de dominio creada y almacenada    |
+| **Mascota**                     | `Acceso a datos`                                                                  | Entidad de dominio                        |
+| **HistoriaClinica**             | `Acceso a datos`                                                                  | Entidad de dominio                        |
 
 ---
 
