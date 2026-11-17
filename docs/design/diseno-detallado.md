@@ -159,34 +159,35 @@ flowchart TB
 
 ```mermaid
 sequenceDiagram
-    actor Vet as Médico<br/>Veterinario
-    participant UI as Formulario<br/>NuevaConsulta
-    participant CP as Controlador<br/>Pantalla
-    participant REST as Controlador<br/>REST
+    actor Vet as Médico Veterinario
+    participant UI as FormularioNuevaConsulta
+    participant CP as ControladorPantalla
+    participant REST as ControladorREST
     participant SRC as ServicioRegistroClinico
-    participant VAL as ValidacionRegistrosClinicos
     participant RC as RepositorioClinico
+    participant VAL as ValidacionRegistrosClinicos
+    participant C as Consulta
 
-    Vet->>UI: presiona «Guardar Consulta» (datos válidos)
-    UI->>CP: evento submit del formulario
-    CP->>CP: leer datos con FormData(form)
-    CP->>REST: POST /api/mascotas/{mascota_id}/consultas (JSON)
-    REST->>REST: request.get_json()
+    Vet->>UI: Presiona Guardar Consulta
+    UI->>CP: enviar datos del formulario
+    CP->>REST: POST /api/mascotas/1/consultas
+
     REST->>SRC: registrar(mascota_id, datos)
     SRC->>RC: obtener_contexto(mascota_id)
-    RC-->>SRC: (mascota, historia)
+    RC-->>SRC: mascota e historia clínica
+
     SRC->>VAL: validar(datos)
-    VAL-->>SRC: (datos_normalizados, errores_vacios)
-    create participant C as Consulta
-    SRC->>C: Consulta(id=0, historia_id, veterinario_id=1, datos_normalizados)
+    VAL-->>SRC: datos válidos, sin errores
+
+    SRC->>C: crear Consulta
     SRC->>RC: guardar_consulta(consulta)
-    RC-->>SRC: consulta con ID asignado
-    SRC-->>REST: ResultadoRegistro("creado", {}, consulta)
-    REST-->>CP: HTTP 201, JSON de confirmación
-    CP->>CP: mostrar mensaje y ejecutar form.reset()
-    CP->>CP: cargarConsultas()
-    CP-->>UI: formulario actualizado
-    UI-->>Vet: informa que la consulta se guardó
+    RC-->>SRC: consulta guardada
+
+    SRC-->>REST: registro exitoso
+    REST-->>CP: HTTP 201
+    CP->>UI: mostrar confirmación
+    UI-->>Vet: Consulta registrada
+
 ```
 
 ---
@@ -195,33 +196,32 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor Vet as Médico<br/>Veterinario
-    participant UI as Formulario<br/>NuevaConsulta
-    participant CP as Controlador<br/>Pantalla
-    participant REST as Controlador<br/>REST
+    actor Vet as Médico Veterinario
+    participant UI as FormularioNuevaConsulta
+    participant CP as ControladorPantalla
+    participant REST as ControladorREST
     participant SRC as ServicioRegistroClinico
-    participant VAL as ValidacionRegistrosClinicos
     participant RC as RepositorioClinico
-    Vet->>UI: presiona «Guardar Consulta» (peso negativo y/o fecha en blanco)
-    UI->>CP: evento submit del formulario
-    CP->>CP: leer datos con FormData(form)
-    CP->>REST: POST /api/mascotas/{mascota_id}/consultas (JSON)
-    REST->>REST: request.get_json()
+    participant VAL as ValidacionRegistrosClinicos
+
+    Vet->>UI: Presiona Guardar Consulta
+    UI->>CP: enviar datos del formulario
+    Note over UI,CP: Se conservan los valores ingresados
+    CP->>REST: POST /api/mascotas/1/consultas
+
     REST->>SRC: registrar(mascota_id, datos)
     SRC->>RC: obtener_contexto(mascota_id)
-    RC-->>SRC: (mascota, historia)
+    RC-->>SRC: mascota e historia clínica
+
     SRC->>VAL: validar(datos)
-    VAL->>VAL: comprobar fecha, peso y campos obligatorios
-    VAL->>VAL: construir diccionario de errores
-    VAL-->>SRC: (datos_normalizados, errores)
-    SRC->>SRC: comprobar que existen errores
-    Note over SRC: RN-03: no se ejecuta guardar_consulta()
-    SRC-->>REST: ResultadoRegistro("invalido", errores)
-    REST-->>CP: HTTP 422, JSON con errores
-    CP->>CP: mostrarErrores(errores)
-    Note over CP,UI: No se ejecuta form.reset()
-    CP-->>UI: campos resaltados y mensajes de error
-    UI-->>Vet: informa los errores y conserva los datos ingresados
+    VAL-->>SRC: errores por campo
+
+    Note over SRC: No se crea ni almacena la consulta
+    SRC-->>REST: registro rechazado, errores
+    REST-->>CP: HTTP 422, errores
+    CP->>UI: mostrar errores por campo
+    UI-->>Vet: Resalta errores y conserva los datos
+
 ```
 
 ---
