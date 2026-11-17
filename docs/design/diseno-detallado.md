@@ -126,9 +126,7 @@ flowchart TB
 | ------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
 | **FormularioNuevaConsulta**     | `Vistas`                                                                          | Vista — MVC (Interfaz Web)                |
 | **ControladorPantalla**         | `Controladores de pantalla`; utiliza `Modelo de formulario` y `Cliente de la API` | Controlador y apoyo — MVC (Interfaz Web)  |
-| **ControladorREST**             | `Controladores REST`                                                              | Presentación — API Clínica                |
-| **ServicioRegistroClinico**     | `Servicio de registro clínico`                                                    | Servicios — API Clínica                   |
-| **ValidacionRegistrosClinicos** | `Validación de registros clínicos`                                                | Servicios — API Clínica                   |
+| **ServicioRegistroClinico**     | `API clínica: Controladores REST registro clínico y Validación `                  | Boundary — API clínica, representación simplificada|
 | **RepositorioClinico**          | `Acceso a datos`                                                                  | Datos e integración — API clínica         |
 | **Consulta**                    | `Validación de registros clínicos` / `Servicio de registro clínico`               | Entidad de dominio creada y almacenada    |
 | **Mascota**                     | `Acceso a datos`                                                                  | Entidad de dominio                        |
