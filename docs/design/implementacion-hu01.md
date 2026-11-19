@@ -15,15 +15,14 @@
 
 - Abrir `/`. Seleccionar peso `-2` y borrar la fecha. Completar síntomas y diagnóstico; pulsar «Guardar Consulta». Se muestran errores bajo cada campo, con borde rojo, y se mantienen los datos.
 - Corregir fecha y peso positivo y volver a guardar: la API responde con creación y la consulta aparece en la lista.
-- Al reiniciar el proceso se pierde el registro, porque la persistencia es deliberadamente en memoria.
+- Los datos se guardan en la base SQLite `data/vetgestion.db`, así que **persisten al reiniciar el proceso**. Para volver al estado inicial se borra el archivo y la aplicación lo recrea con `schema.sql`.
 
 ## Decisiones de alcance
 
 - API Flask y frontend HTML/CSS/JavaScript separados, coherentes con las capas de la API y el MVC planteados en TP3.
 - La autenticación es simulada con un veterinario fijo. No existe conexión con OMIA ni procesamiento de pagos.
-- Se eligió persistencia **en memoria** autorizada por la consigna TP4, aunque el diseño de producción del TP3 menciona PostgreSQL. Se sustituye por otra implementación del puerto `RepositorioClinico` en una etapa posterior.
+- Se eligió **SQLite** como persistencia, detrás del puerto `RepositorioClinico` (clase `RepositorioClinicoSQL`). Es una simplificación respecto del TP3, que define PostgreSQL como base central (`DA-04`): cambiarla implica solo otra implementación del mismo puerto. Las pruebas usan SQLite en memoria.
 - El código anterior del TP2 en `docs/ui/mockups/` queda sin cambios; esta es una implementación independiente en la raíz y `src/`.
-- **No incluye pruebas:** las pruebas automatizadas pertenecen al siguiente paso del TP.
 
 ## Contrato REST mínimo
 

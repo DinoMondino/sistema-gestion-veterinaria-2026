@@ -1,7 +1,7 @@
 # Documento de Diseño Detallado — TP4 (Parte A)
 **Asignatura:** Ingeniería del Software 2026 — Trabajo Práctico 4  
 **Proceso:** Gestión Clínica e Historial  
-**Historia de Usuario:** HU-02 — Edición de Entradas Previas del Historial Clínico  
+**Historia de Usuario:** HU-01 — Manejo de datos obligatorios incompletos o con formato inválido 
 
 ---
 
@@ -37,7 +37,7 @@ Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Funcionalidad** | HU-01, derivada de CU-01, slice A1; vinculada con RF-10 y RF-11\. Validar los datos antes de guardar, rechazar los inválidos e informar los errores.                                                                                                                                                                                                                                                            |
 | **Estructura**    | Estilo cliente-servidor. Patrón MVC en la interfaz web y capas en la API clínica. Intervienen Vistas, Controladores de pantalla, Modelo de formulario, Cliente de la API, Controladores REST, Autenticación y autorización, Servicio de registro clínico, Validación de registros clínicos y Gestión de excepciones. Componente principal: Validación de registros clínicos, en la capa de servicios de la API. |
-| **Calidad**       | EC-01: Operabilidad. Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga. DA-02: interfaz MVC con conservación del formulario y devolución conjunta de errores por campo.                                                                                                                                                                                                         |
+| **Calidad**       | EC-01: Operabilidad. Tácticas: mantener modelos de tarea, de usuario y del sistema; reducir sobrecarga. DA-02: interfaz MVC con conservación del formulario y devolución conjunta de errores por campo. EC-03                                                                                                                                                                                                        |
 | **Dominio**       | Se utilizan Veterinario, Mascota, HistoriaClinica y Consulta para representar el profesional, el paciente, su historial y los datos de la consulta que se intenta registrar.                                                                                                                                                                                                                                    |
 | **Verificación**  | Para la HU: ingresar peso negativo o fecha vacía y comprobar rechazo, mensaje específico, campo resaltado, ausencia de almacenamiento y conservación de datos. Para EC-01: comprobar 0 pérdidas de datos ante errores y medir el registro crítico en ≤ 45 segundos y ≤ 8 interacciones, con al menos 90 % de pruebas exitosas en las condiciones definidas por el escenario.                                    |
 
@@ -45,9 +45,24 @@ Then: El sistema rechaza el almacenamiento, resalta en rojo el campo con error y
 
 ### 1.5 Entidades del Modelo de Dominio Intervinientes
 
-Entidades involucradas en HU-01:
+Entidades del modelo de dominio del TP1 (`modelo_de_dominio_inicial.md`) analizadas para HU-01:
 
-Entidad del TP1¿Interviene?Qué utiliza la HU de ellaLa HU la...**Usuario**IndirectamenteIdentidad y rol del usuario autenticado, mediante VeterinarioConsulta**Secretaria**NoNo participa en el registro clínico de esta HU—**Veterinario**SíProfesional que intenta registrar la consultaConsulta**DuenioMascota**NoLos datos del tutor no intervienen en la validación—**Mascota**SíIdentificación del paciente al que corresponde la consultaConsulta**HistoriaClinica**SíHistorial al que se asociaría la consultaConsulta (no modifica)**Consulta**SíFecha y demás datos clínicos, incluido el peso que debe validarseSe intenta crear (el guardado se rechaza)**Vacuna**NoNo se validan vacunas en este escenario—**AplicacionVacuna**NoNo se registra una aplicación de vacuna—**Turno**NoNo se gestiona la agenda—**Prescripcion**NoNo se registra una prescripción—**ReaccionAdversaRegistrada**NoNo se registra una reacción adversa—**Pago**NoNo corresponde al proceso de validación clínica—**PatologiaReferencia**NoNo se realiza una consulta a OMIA
+| Entidad del TP1 | ¿Interviene? | Qué utiliza la HU de ella | La HU la... |
+|---|---|---|---|
+| **Usuario** | Indirectamente | Identidad y rol del usuario autenticado, mediante `Veterinario` | Consulta |
+| **Secretaria** | No | No participa en el registro clínico de esta HU | — |
+| **Veterinario** | Sí | Profesional que intenta registrar la consulta | Consulta |
+| **DuenioMascota** | No | Los datos del tutor no intervienen en la validación | — |
+| **Mascota** | Sí | Identificación del paciente al que corresponde la consulta | Consulta |
+| **HistoriaClinica** | Sí | Historial al que se asociaría la consulta | Consulta (no la modifica) |
+| **Consulta** | Sí | Fecha y demás datos clínicos, incluido el peso que debe validarse | Intenta crearla (si hay errores, el guardado se rechaza) |
+| **Vacuna** | No | No se validan vacunas en este escenario | — |
+| **AplicacionVacuna** | No | No se registra una aplicación de vacuna | — |
+| **Turno** | No | No se gestiona la agenda | — |
+| **Prescripcion** | No | No se registra una prescripción | — |
+| **ReaccionAdversaRegistrada** | No | No se registra una reacción adversa | — |
+| **Pago** | No | No corresponde al proceso de validación clínica | — |
+| **PatologiaReferencia** | No | No se realiza una consulta a OMIA | — |
 
 ---
 
@@ -127,18 +142,15 @@ flowchart TB
 | **FormularioNuevaConsulta**     | `Vistas`                                                                          | Vista — MVC (Interfaz Web)                |
 | **ControladorPantalla**         | `Controladores de pantalla`; utiliza `Modelo de formulario` y `Cliente de la API` | Controlador y apoyo — MVC (Interfaz Web)  |
 | **ServicioRegistroClinico**     | `API clínica: Controladores REST registro clínico y Validación `                  | Boundary — API clínica, representación simplificada|
-| **RepositorioClinico**          | `Acceso a datos`                                                                  | Datos e integración — API clínica         |
-| **Consulta**                    | `Validación de registros clínicos` / `Servicio de registro clínico`               | Entidad de dominio creada y almacenada    |
-| **Mascota**                     | `Acceso a datos`                                                                  | Entidad de dominio                        |
-| **HistoriaClinica**             | `Acceso a datos`                                                                  | Entidad de dominio                        |
-
+| **RepositorioClinico** | `Acceso a datos`; se comunica con el contenedor **Base de datos central** por **SQL** (relación "Lee y escribe" del catálogo 7.1.3 del TP3) | Datos e integración — API clínica |
+| **Consulta** | `Servicio de registro clínico` la crea; `Acceso a datos` la guarda (tabla `consulta`) | Entidad de dominio creada y almacenada |
+| **Mascota** | `Acceso a datos` (tabla `mascota` en la Base de datos central) | Entidad de dominio |
+| **HistoriaClinica** | `Acceso a datos` (tabla `historia_clinica`) | Entidad de dominio |
 ---
 
-### Paso 4. Diagramas de Secuencia
+## Paso 4 — Diagramas de Secuencia y Asignación de Responsabilidades
 
-# Paso 4 — Diagramas de Secuencia y Asignación de Responsabilidades (HU-01)
-
-## Contexto y Convenciones
+### Contexto y Convenciones
 
 * **Secuencia A: Camino Principal.** El veterinario ya corrigió y guarda con datos válidos (CU-01, pasos 5 a 7). Es el destino de la HU: «corregirlos» y poder guardar.
 * **Secuencia B: Caminos de Rechazo.** Es el camino que pide el criterio de aceptación: peso negativo y/o fecha en blanco. Las dos causas son variantes pequeñas del mismo camino (se muestran con `opt`) y se informan juntas.
@@ -147,7 +159,7 @@ flowchart TB
 
 ---
 
-## 4.1 Secuencia A: Camino Principal (Flujo Exitoso)
+### 4.1 Secuencia A: Camino Principal (Flujo Exitoso)
 
 ```mermaid
 sequenceDiagram
@@ -159,6 +171,7 @@ sequenceDiagram
     participant RC as RepositorioClinico
     participant VAL as ValidacionRegistrosClinicos
     participant C as Consulta
+    participant BD as Base de datos central
 
     Vet->>UI: Presiona Guardar Consulta
     UI->>CP: enviar datos del formulario
@@ -166,6 +179,8 @@ sequenceDiagram
 
     REST->>SRC: registrar(mascota_id, datos)
     SRC->>RC: obtener_contexto(mascota_id)
+    RC->>BD: SELECT mascota e historia clínica
+    BD-->>RC: filas
     RC-->>SRC: mascota e historia clínica
 
     SRC->>VAL: validar(datos)
@@ -173,18 +188,22 @@ sequenceDiagram
 
     SRC->>C: crear Consulta
     SRC->>RC: guardar_consulta(consulta)
-    RC-->>SRC: consulta guardada
+    Note over RC,BD: Una sola transacción: se guarda completa o no se guarda (EC-03)
+    RC->>BD: BEGIN + INSERT INTO consulta
+    BD-->>RC: id asignado
+    RC->>BD: COMMIT
+    RC-->>SRC: consulta guardada con id
 
     SRC-->>REST: registro exitoso
     REST-->>CP: HTTP 201
     CP->>UI: mostrar confirmación
     UI-->>Vet: Consulta registrada
-
 ```
 
 ---
 
-## 4.2 Secuencia B: Caminos de Rechazo (Datos Inválidos)
+### 4.2 Secuencia B: Caminos de Rechazo (Datos Inválidos)
+
 
 ```mermaid
 sequenceDiagram
@@ -195,6 +214,7 @@ sequenceDiagram
     participant SRC as ServicioRegistroClinico
     participant RC as RepositorioClinico
     participant VAL as ValidacionRegistrosClinicos
+    participant BD as Base de datos central
 
     Vet->>UI: Presiona Guardar Consulta
     UI->>CP: enviar datos del formulario
@@ -203,31 +223,65 @@ sequenceDiagram
 
     REST->>SRC: registrar(mascota_id, datos)
     SRC->>RC: obtener_contexto(mascota_id)
+    RC->>BD: SELECT mascota e historia clínica
+    BD-->>RC: filas
     RC-->>SRC: mascota e historia clínica
 
     SRC->>VAL: validar(datos)
     VAL-->>SRC: errores por campo
 
-    Note over SRC: No se crea ni almacena la consulta
+    Note over SRC,BD: No se crea la consulta ni se llama a guardar_consulta: no hay INSERT, 0 registros guardados
     SRC-->>REST: registro rechazado, errores
     REST-->>CP: HTTP 422, errores
     CP->>UI: mostrar errores por campo
     UI-->>Vet: Resalta errores y conserva los datos
-
 ```
 
 ---
 
-## 4.3 Demostración de la Táctica de Calidad (EC-01 / DA-02)
+## 4.2.1 Secuencia C: falla de la base al guardar
+
+Cubre la táctica de transacciones y rollback de EC-03 (`DA-04`, `DA-05`). No la exige el criterio de aceptación de HU-01.
+
+```mermaid
+sequenceDiagram
+    actor Vet as Médico Veterinario
+    participant UI as FormularioNuevaConsulta
+    participant CP as ControladorPantalla
+    participant REST as ControladorREST
+    participant SRC as ServicioRegistroClinico
+    participant RC as RepositorioClinico
+    participant BD as Base de datos central
+    participant EXC as GestionExcepciones
+
+    CP->>REST: POST /api/mascotas/1/consultas
+    REST->>SRC: registrar(mascota_id, datos válidos)
+    SRC->>RC: guardar_consulta(consulta)
+    RC->>BD: BEGIN + INSERT INTO consulta
+    BD--xRC: error de la base
+    RC->>BD: ROLLBACK
+    RC--xSRC: error de persistencia
+    SRC--xREST: propaga el error
+    REST->>EXC: traducir(error)
+    EXC-->>REST: respuesta controlada
+    REST-->>CP: HTTP 503, aviso de mantenimiento
+    CP->>UI: mostrar aviso y conservar lo cargado
+    UI-->>Vet: No se guardó; los datos siguen en pantalla
+```
+
+---
+
+### 4.3 Demostración de la Táctica de Calidad (EC-01 / DA-02)
 
 | Táctica | Operación o mensaje que la muestra | Evidencia en el diseño |
 | :--- | :--- | :--- |
 | **Mantener modelos de tarea, de usuario y del sistema** (`Modelo de formulario`) | `conservar_datos(campos)` **antes** de enviar y `registrar_errores(errores)` al volver el rechazo | La pantalla se redibuja desde ese estado (`mostrar_errores(errores, campos)`) $\rightarrow$ **0 pérdidas de datos**. |
 | **Reducir sobrecarga** (`ValidacionRegistrosClinicos`) | Una sola llamada `validar(datos)` recorre todos los campos y devuelve **todos** los errores juntos en un único `DatosInvalidosError` | Menos interacciones ida y vuelta entre cliente y servidor. |
+| **Transacciones y rollback** (EC-03, `DA-04`) | `BEGIN` / `COMMIT` en `guardar_consulta`; `ROLLBACK` si falla el `INSERT` (Secuencia C) | Una consulta se guarda completa o no se guarda: no quedan registros parciales. |
 
 ---
 
-## 4.4 Asignación de Responsabilidades (Criterios GRASP)
+### 4.4 Asignación de Responsabilidades (Criterios GRASP)
 
 | Responsabilidad | Quién | Criterio GRASP | Por qué |
 | :--- | :--- | :--- | :--- |
@@ -333,3 +387,70 @@ classDiagram
     RepositorioClinicoEnMemoria --> Consulta : almacena
 
 ```
+## 6. IMPLEMENTACIÓN
+
+### 6.1 Persistencia y datos iniciales
+
+La persistencia usa **SQLite** detrás de la interfaz `RepositorioClinico`, mediante la clase `RepositorioClinicoSQL`. La base se crea con el script `schema.sql`, que define las tablas y carga los datos de demostración (antes estaban fijos en el constructor del repositorio en memoria):
+
+| Tabla | Contenido inicial |
+|---|---|
+| `veterinario` | 1 — Dra. Ana Ríos (profesional fijo de demostración, la autenticación está simulada) |
+| `mascota` | 1 — Luna (Perro, 6.8 kg); 2 — Toby (Gato, 4.1 kg) |
+| `historia_clinica` | Una por mascota (1 → Luna, 2 → Toby) |
+| `consulta` | Vacía: la completa la HU |
+
+```sql
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE veterinario (
+    id     INTEGER PRIMARY KEY,
+    nombre TEXT NOT NULL
+);
+
+CREATE TABLE mascota (
+    id          INTEGER PRIMARY KEY,
+    nombre      TEXT NOT NULL,
+    especie     TEXT NOT NULL,
+    peso_actual TEXT NOT NULL
+);
+
+CREATE TABLE historia_clinica (
+    id         INTEGER PRIMARY KEY,
+    mascota_id INTEGER NOT NULL UNIQUE REFERENCES mascota(id)
+);
+
+CREATE TABLE consulta (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    historia_id    INTEGER NOT NULL REFERENCES historia_clinica(id),
+    veterinario_id INTEGER NOT NULL REFERENCES veterinario(id),
+    fecha          TEXT NOT NULL,
+    peso           TEXT NOT NULL,
+    sintomas       TEXT NOT NULL,
+    diagnostico    TEXT NOT NULL,
+    observaciones  TEXT NOT NULL DEFAULT ''
+);
+
+INSERT INTO veterinario VALUES (1, 'Dra. Ana Ríos');
+INSERT INTO mascota VALUES (1, 'Luna', 'Perro', '6.8'), (2, 'Toby', 'Gato', '4.1');
+INSERT INTO historia_clinica VALUES (1, 1), (2, 2);
+```
+
+La relación 1 a 1 entre `Mascota` e `HistoriaClinica` del modelo de dominio se refleja con `UNIQUE` en `mascota_id`. Las reglas de validación (RN-01 a RN-04) **siguen viviendo solo en `ValidacionRegistrosClinicos`**: la base no las duplica. El `id` de la consulta lo asigna la base (autoincremental), ya no el repositorio.
+
+### 6.2 Mapeo de tipos y relación con la arquitectura
+
+| Atributo del dominio | Tipo en Python | SQLite (TP4) | PostgreSQL (TP3, `DA-04`) |
+|---|---|---|---|
+| `id` | `int` | `INTEGER` (autoincremental) | `INTEGER` / identidad |
+| `nombre`, `especie`, `sintomas`, `diagnostico`, `observaciones` | `str` | `TEXT` | `TEXT` / `VARCHAR` |
+| `fecha` | `date` | `TEXT` (ISO 8601, `AAAA-MM-DD`) | `DATE` |
+| `peso`, `peso_actual` | `Decimal` | `TEXT` | `NUMERIC(6,2)` |
+
+El peso se guarda como `TEXT` en SQLite porque su tipo `NUMERIC` lo convertiría a punto flotante y se perdería la exactitud decimal que el dominio usa (`Decimal`). `RepositorioClinicoSQL` convierte al leer (`date.fromisoformat`, `Decimal(texto)`) y al escribir (`isoformat()`, `str`), de modo que servicio, validador y entidades siguen trabajando con `date` y `Decimal`.
+
+**Simplificación respecto del TP3:** la arquitectura (`DA-04`) define PostgreSQL como "Base de datos central". En el TP4 se usa SQLite porque la consigna deja libre la elección de la base y no exige PostgreSQL; no requiere instalar ni configurar un servidor. Como el acceso está detrás de `RepositorioClinico`, pasar a PostgreSQL implica solo escribir otra implementación de esa interfaz (más el cambio de tipos de la tabla anterior), sin tocar el servicio ni el controlador.
+
+## 7. Testing (HU-01)
+
+## 8. Trazabilidad (HU-01)
