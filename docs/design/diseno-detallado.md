@@ -438,7 +438,7 @@ INSERT INTO mascota VALUES (1, 'Luna', 'Perro', '6.8'), (2, 'Toby', 'Gato', '4.1
 INSERT INTO historia_clinica VALUES (1, 1), (2, 2);
 ```
 
-La relación 1 a 1 entre `Mascota` e `HistoriaClinica` del modelo de dominio se refleja con `UNIQUE` en `mascota_id`. Las reglas de validación (RN-01 a RN-04) **siguen viviendo solo en `ValidacionRegistrosClinicos`**: la base no las duplica. El `id` de la consulta lo asigna la base (autoincremental), ya no el repositorio.
+La relación 1 a 1 entre `Mascota` e `HistoriaClinica` del modelo de dominio se refleja con `UNIQUE` en `mascota_id`. Las reglas de validación de datos (RN-01, RN-02 y RN-04) **siguen viviendo solo en `ValidacionRegistrosClinicos`** y la RN-03 en `ServicioRegistroClinico`: la base no las duplica. El `id` de la consulta lo asigna la base (autoincremental), ya no el repositorio.
 
 ### 6.2 Mapeo de tipos y relación con la arquitectura
 
