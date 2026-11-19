@@ -266,7 +266,7 @@ sequenceDiagram
     EXC-->>REST: respuesta controlada
     REST-->>CP: HTTP 503, aviso de mantenimiento
     CP->>UI: mostrar aviso y conservar lo cargado
-    UI-->>Vet: No se guardó; los datos siguen en pantalla
+    UI-->>Vet: No se guardó, los datos siguen en pantalla
 ```
 
 ---
@@ -387,6 +387,8 @@ classDiagram
     RepositorioClinicoEnMemoria --> Consulta : almacena
 
 ```
+
+---
 ## 6. IMPLEMENTACIÓN
 
 ### 6.1 Persistencia y datos iniciales
