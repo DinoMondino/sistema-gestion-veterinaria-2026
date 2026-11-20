@@ -391,6 +391,8 @@ classDiagram
 ---
 ## 6. IMPLEMENTACIÓN
 
+## 6. Implementación
+
 ### 6.1 Persistencia y datos iniciales
 
 La persistencia usa **SQLite** detrás de la interfaz `RepositorioClinico`, mediante la clase `RepositorioClinicoSQL`. La base se crea con el script `schema.sql`, que define las tablas y carga los datos de demostración (antes estaban fijos en el constructor del repositorio en memoria):
