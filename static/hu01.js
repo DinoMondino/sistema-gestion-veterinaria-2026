@@ -70,7 +70,7 @@ form.addEventListener("submit", async event => {
     mensaje.className = "mensaje exito";
     mensaje.textContent = cuerpo.mensaje;
     form.reset(); // Solo luego de guardado exitoso.
-    await cargarConsultas();
+    await cargarContexto();
   } catch (error) {
     mensaje.className = "mensaje fallo";
     mensaje.textContent = error.message;
