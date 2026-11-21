@@ -112,42 +112,40 @@ Entidades de `modelo_de_dominio_inicial.md` analizadas:
 Leyenda: círculo punteado = actor; óvalo azul = *boundary* (frontera); círculo naranja = *control*; rectángulo verde = *entity* (entidad). Las flechas dobles indican conversación en ambos sentidos.
 
 ```mermaid
-flowchart LR
-    vet(["Médico Veterinario<br/>(actor)"])
+    flowchart TB
+    vet["Médico Veterinario<br/>(actor)"]
 
     ui(["«boundary»<br/>FormularioNuevaConsulta"])
-
-    cp(("«control»<br/>ControladorPantalla"))
-    srv(("«control»<br/>ServicioRegistroClinico"))
-    val(("«control»<br/>ValidacionRegistrosClinicos"))
-    repo(("«control»<br/>RepositorioClinico"))
+    cp(("«controller»<br/>ControladorPantalla"))
+    api(["«boundary»<br/>ServicioRegistroClinico"])
+    repo(("«controller»<br/>RepositorioClinico"))
 
     mascota[["«entity»<br/>Mascota"]]
     historia[["«entity»<br/>HistoriaClinica"]]
     consulta[["«entity»<br/>Consulta"]]
-    veterinario[["«entity»<br/>Veterinario"]]
 
-    vet <--> ui
+    vet --> ui
     ui <--> cp
-    cp <--> srv
-    srv <--> val
-    srv <--> repo
+    cp <--> api
+    api <--> repo
+
     repo --> mascota
     repo --> historia
     repo --> consulta
 
     mascota -.->|"tiene 1"| historia
     historia -.->|"registra 0..*"| consulta
-    veterinario -.->|"atiende 0..*"| consulta
 
-    classDef actor fill:#f3f4f6,stroke:#4b5563,stroke-dasharray:4 3,color:#111827
+    classDef actor fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-dasharray:4 3
     classDef boundary fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
-    classDef control fill:#ffedd5,stroke:#c2410c,color:#0f172a
+    classDef controller fill:#ffedd5,stroke:#c2410c,color:#0f172a
     classDef entity fill:#dcfce7,stroke:#15803d,color:#0f172a
+
     class vet actor
-    class ui boundary
-    class cp,rest,srv,val,repo control
-    class mascota,historia,consulta,veterinario entity
+    class ui,api boundary
+    class cp,repo controller
+    class mascota,historia,consulta entity
+
 ```
 
 Reglas de robustez verificadas: el actor solo habla con la frontera; la frontera solo habla con un control; ningún control se conecta a otra frontera; las entidades solo se alcanzan desde controles (el repositorio) y entre sí; no hay flechas frontera-entidad ni actor-control.
