@@ -31,7 +31,7 @@ Relevancia para el proyecto: es la **puerta de entrada de todo dato clínico**. 
 
 ### 1.4 Siglas
 
-HU: historia de usuario. CU: caso de uso. RF: requerimiento funcional. EC: escenario de calidad. DA: decisión de arquitectura. RN: regla de negocio. CP: caso de prueba. CA: criterio de aceptación. MVC: Modelo-Vista-Controlador. GRASP: *General Responsibility Assignment Software Patterns*. REST: estilo de API sobre HTTP. JSON: formato de texto para intercambiar datos. SQL: lenguaje de bases relacionales. V(G): complejidad ciclomática. Más en la sección 9.
+TP: trabajo práctico. HU: historia de usuario. CU: caso de uso. RF: requerimiento funcional. EC: escenario de calidad. DA: decisión de arquitectura. RN: regla de negocio. CP: caso de prueba. CA: criterio de aceptación. MVC: Modelo-Vista-Controlador. GRASP: *General Responsibility Assignment Software Patterns*. API: interfaz de programación de aplicaciones. HTTP/HTTPS: protocolo de la web, sin/con cifrado. REST: estilo de API sobre HTTP. JSON: formato de texto para intercambiar datos. HTML/CSS: lenguajes de las pantallas. SQL: lenguaje de bases relacionales. V(G): complejidad ciclomática. Más en la sección 9.
 
 ---
 
@@ -118,7 +118,6 @@ flowchart LR
     ui(["«boundary»<br/>FormularioNuevaConsulta"])
 
     cp(("«control»<br/>ControladorPantalla"))
-    rest(("«control»<br/>ControladorREST"))
     srv(("«control»<br/>ServicioRegistroClinico"))
     val(("«control»<br/>ValidacionRegistrosClinicos"))
     repo(("«control»<br/>RepositorioClinico"))
@@ -130,8 +129,7 @@ flowchart LR
 
     vet <--> ui
     ui <--> cp
-    cp <--> rest
-    rest <--> srv
+    cp <--> srv
     srv <--> val
     srv <--> repo
     repo --> mascota
@@ -154,6 +152,8 @@ flowchart LR
 
 Reglas de robustez verificadas: el actor solo habla con la frontera; la frontera solo habla con un control; ningún control se conecta a otra frontera; las entidades solo se alcanzan desde controles (el repositorio) y entre sí; no hay flechas frontera-entidad ni actor-control.
 
+**Por qué no figura `ControladorREST`.** Los controladores REST del TP3 son un adaptador de transporte: traducen HTTP/JSON a una llamada al servicio y el resultado a un código de respuesta (201, 400, 404, 422, 503), sin decidir nada del dominio. La robustez modela la lógica de la HU, no el medio por el que viaja; por eso la comunicación entre `ControladorPantalla` y `ServicioRegistroClinico` se dibuja directa, y el adaptador HTTP se muestra en las secuencias (3.5) y en el modelo de clases (4.1), donde se ven los mensajes y los códigos de respuesta.
+
 `Veterinario` figura como entidad pero ningún control la lee: en el TP4 la autenticación está simulada (D2) y el servicio asigna `veterinario_id = 1`.
 
 **Ubicación de las reglas de negocio**
@@ -173,11 +173,12 @@ Ninguna regla de validación vive en la pantalla (RN-01 a RN-06 y RN-08 se aplic
 
 **Asignación de cada elemento a un componente del TP3**
 
+El componente «Controladores REST» (`src/api/controladores.py`, `app.py`) no tiene elemento propio en la robustez, por lo dicho arriba; su rol se verifica en las secuencias y en la tabla 3.6.
+
 | Elemento del diagrama | Componente del TP3 | Capa o rol | Archivo |
 |---|---|---|---|
 | `FormularioNuevaConsulta` | Vistas | Vista (MVC, interfaz web) | `templates/nueva_consulta.html`, `static/hu01.css` |
 | `ControladorPantalla` | Controladores de pantalla, Modelo de formulario y Cliente de la API | Controlador y apoyo (MVC) | `static/hu01.js` |
-| `ControladorREST` | Controladores REST | Presentación (API clínica) | `src/api/controladores.py`, `app.py` |
 | `ServicioRegistroClinico` | Servicio de registro clínico | Servicios | `src/aplicacion/servicio_registro.py` |
 | `ValidacionRegistrosClinicos` | Validación de registros clínicos | Servicios | `src/aplicacion/validacion.py` |
 | `RepositorioClinico` | Acceso a datos | Datos e integración | `src/infraestructura/repositorios.py` |
@@ -185,7 +186,7 @@ Ninguna regla de validación vive en la pantalla (RN-01 a RN-06 y RN-08 se aplic
 
 ### 3.5 Diagramas de secuencia
 
-Los participantes son los del diagrama de robustez. `RepositorioClinicoSQLite` es la implementación del puerto `RepositorioClinico` que usa la aplicación. Cubren el flujo principal, el rechazo (el camino que pide el criterio de aceptación) y la falla de la base. Los caminos «mascota inexistente» (404) y «cuerpo que no es JSON» (400) son variantes del controlador y se describen en la tabla 3.5.4.
+Los participantes son los del diagrama de robustez, más `ControladorREST` como adaptador HTTP (queda fuera de la robustez, ver 3.4, pero es parte del código y del TP3, y es quien decide los códigos de respuesta). `RepositorioClinicoSQLite` es la implementación del puerto `RepositorioClinico` que usa la aplicación. Cubren el flujo principal, el rechazo (el camino que pide el criterio de aceptación) y la falla de la base. Los caminos «mascota inexistente» (404) y «cuerpo que no es JSON» (400) son variantes del controlador y se describen en la tabla 3.5.4.
 
 #### 3.5.1 Secuencia A — Guardado exitoso
 
@@ -452,6 +453,7 @@ Las clases `ControladorPantalla` y `FormularioNuevaConsulta` no aparecen: son Ja
 | V4 | El diseño inicial decía que `Consulta` decidía si fecha y peso son válidos | Se actualizó el diseño: lo decide `ValidacionRegistrosClinicos` (componente del TP3). Ver sección 5.3 |
 | V5 | El diseño inicial tenía `AutenticacionAutorizacion` y `GestionExcepciones` como participantes | Se quitaron de las secuencias: son los casos D2 y D3 de la sección 2.2 |
 | V6 | El código no tiene una clase `ControladorREST`: son funciones dentro de `crear_api` | Se representa como módulo en el diagrama; en las secuencias es el participante «ControladorREST» |
+| V10 | La robustez no incluye `ControladorREST` (es un adaptador HTTP sin lógica de dominio) pero el código y las secuencias sí lo tienen | Se mantiene fuera de la robustez y dentro de las secuencias y las clases, con la justificación de 3.4. El resto de los participantes de las secuencias coincide con la robustez |
 | V7 | Los `GET` del controlador usan el repositorio directamente | Diferencia D5 de la sección 2.2 |
 | V8 | El servicio lee el contexto antes de validar (un 404 prevalece sobre un 422) | Las secuencias A y B ya lo reflejan; relación D4 |
 | V9 | El diseño anterior no mostraba que `guardar_consulta` también actualiza el peso vigente (CU-01, paso 6); el código lo hace en la misma transacción | Se actualizó la secuencia A, la regla RN-08 y la tabla GRASP. El encabezado de la pantalla se vuelve a consultar tras guardar |
@@ -730,7 +732,9 @@ En `validar`, el `for` recorre una tupla fija de dos campos: la rama «cero iter
 
 ---
 
-### 9 Glosario
+## 9. Glosario y bibliografía
+
+### 9.1 Glosario
 
 | Término | Significado |
 |---|---|
@@ -746,3 +750,13 @@ En `validar`, el `for` recorre una tupla fija de dos campos: la rama «cero iter
 | Repositorio | Interfaz que oculta cómo se guardan las entidades |
 | RN | Regla de negocio |
 | SQLite | Motor de base de datos relacional embebido en un archivo |
+
+### 9.2 Bibliografía
+
+1. Bass, L., Clements, P. y Kazman, R. (2021). *Software Architecture in Practice* (4.ª ed.). Addison-Wesley.
+2. Larman, C. (2004). *Applying UML and Patterns* (3.ª ed.). Prentice Hall. Criterios GRASP.
+3. Rosenberg, D. y Stephens, M. (2005). *Use Case Driven Object Modeling with UML*. Apress. Diagrama de robustez.
+4. Fowler, M. (2002). *Patterns of Enterprise Application Architecture*. Addison-Wesley. Patrón Repositorio.
+5. McCabe, T. (1976). A Complexity Measure. *IEEE Transactions on Software Engineering*, 2(4).
+6. ISO/IEC/IEEE 25010:2023. *Product quality model*.
+7. Documentación del grupo: `arquitectura.md` (TP3), `slices.md`, `RF.md`, `quality-scenarios.md`, `modelo_de_dominio_inicial.md` (TP1 y TP2).
