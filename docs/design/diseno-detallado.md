@@ -185,12 +185,13 @@ El componente «Controladores REST» (`src/api/controladores.py`, `app.py`) no t
 
 | Elemento del diagrama | Componente del TP3 | Capa o rol | Archivo |
 |---|---|---|---|
-| `FormularioNuevaConsulta` | Vistas | Vista (MVC, interfaz web) | `templates/nueva_consulta.html`, `static/hu01.css` |
-| `ControladorPantalla` | Controladores de pantalla, Modelo de formulario y Cliente de la API | Controlador y apoyo (MVC) | `static/hu01.js` |
-| `ServicioRegistroClinico` | Servicio de registro clínico | Servicios | `src/aplicacion/servicio_registro.py` |
-| `ValidacionRegistrosClinicos` | Validación de registros clínicos | Servicios | `src/aplicacion/validacion.py` |
+| `FormularioNuevaConsulta` | Vistas | Interfaz web — Vista MVC | `templates/nueva_consulta.html` |
+| `ControladorPantalla` | Controladores de pantalla, Modelo de formulario y Cliente de la API | Interfaz web — Controlador MVC | `static/hu01.js` |
+| `ServicioRegistroClinico` | API clínica: Controladores REST, Servicio de registro clínico y Validación de registros clínicos | Boundary de la API en la robustez simplificada | `src/api/controladores.py`, `src/aplicacion/servicio_registro.py`, `src/aplicacion/validacion.py` |
 | `RepositorioClinico` | Acceso a datos | Datos e integración | `src/infraestructura/repositorios.py` |
-| `Mascota`, `HistoriaClinica`, `Consulta`, `Veterinario` | Entidades de dominio, guardadas por Acceso a datos en la Base de datos central (SQLite: tablas `mascotas`, `historias`, `consultas`, `veterinarios`) | Dominio | `src/dominio/entidades.py`, `_ESQUEMA` en `src/infraestructura/repositorios.py` |
+| `Mascota` | Modelo de dominio | Entidad | `src/dominio/entidades.py` |
+| `HistoriaClinica` | Modelo de dominio | Entidad | `src/dominio/entidades.py` |
+| `Consulta` | Modelo de dominio | Entidad | `src/dominio/entidades.py` |
 
 ### 3.5 Diagramas de secuencia
 
