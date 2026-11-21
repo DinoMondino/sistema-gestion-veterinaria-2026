@@ -47,9 +47,14 @@ class RepositorioClinicoEnMemoria(RepositorioClinico):
         self._siguiente_id = 1
 
     def obtener_contexto(self, mascota_id: int):
-        mascota = self.mascotas.get(mascota_id)
-        historia = self.historias.get(mascota_id)
-        return (mascota, historia) if mascota and historia else None
+    mascota = self.mascotas.get(mascota_id)
+    historia = self.historias.get(mascota_id)
+    if not (mascota and historia):
+        return None
+    ultimas = self.listar_consultas(historia.id)
+    if ultimas:
+        mascota = replace(mascota, peso_actual=ultimas[0].peso)
+    return mascota, historia
 
     def guardar_consulta(self, consulta: Consulta) -> Consulta:
         with self._lock:
@@ -57,14 +62,9 @@ class RepositorioClinicoEnMemoria(RepositorioClinico):
                              if h.id == consulta.historia_id), None)
             if historia is None:
                 raise ValueError("Historia clínica inexistente.")
-            hay_posterior = any(c.historia_id == historia.id and c.fecha > consulta.fecha
-                                for c in self._consultas)
             creada = replace(consulta, id=self._siguiente_id)
             self._siguiente_id += 1
             self._consultas.append(creada)
-            if not hay_posterior:
-                mascota = self.mascotas[historia.mascota_id]
-                self.mascotas[mascota.id] = replace(mascota, peso_actual=creada.peso)
             return creada
 
     def listar_consultas(self, historia_id: int) -> list[Consulta]:
@@ -137,18 +137,22 @@ class RepositorioClinicoSQLite(RepositorioClinico):
             self._con.close()
 
     def obtener_contexto(self, mascota_id: int):
-        try:
-            with self._lock:
-                m = self._con.execute("SELECT * FROM mascotas WHERE id = ?",
-                                      (mascota_id,)).fetchone()
-                h = self._con.execute("SELECT * FROM historias WHERE mascota_id = ?",
-                                      (mascota_id,)).fetchone()
-        except sqlite3.Error as error:
-            raise ErrorPersistencia(str(error)) from error
-        if m is None or h is None:
-            return None
-        return (Mascota(m["id"], m["nombre"], m["especie"], Decimal(m["peso_actual"])),
-                HistoriaClinica(h["id"], h["mascota_id"]))
+    try:
+        with self._lock:
+            m = self._con.execute("SELECT * FROM mascotas WHERE id = ?",
+                                  (mascota_id,)).fetchone()
+            h = self._con.execute("SELECT * FROM historias WHERE mascota_id = ?",
+                                  (mascota_id,)).fetchone()
+            ultima = None if h is None else self._con.execute(
+                "SELECT peso FROM consultas WHERE historia_id = ?"
+                " ORDER BY fecha DESC, id DESC LIMIT 1", (h["id"],)).fetchone()
+    except sqlite3.Error as error:
+        raise ErrorPersistencia(str(error)) from error
+    if m is None or h is None:
+        return None
+    peso = Decimal(ultima["peso"]) if ultima else Decimal(m["peso_actual"])
+    return (Mascota(m["id"], m["nombre"], m["especie"], peso),
+            HistoriaClinica(h["id"], h["mascota_id"]))
 
     def guardar_consulta(self, consulta: Consulta) -> Consulta:
         try:
