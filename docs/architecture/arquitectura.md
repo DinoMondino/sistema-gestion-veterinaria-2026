@@ -35,6 +35,12 @@ Las siguientes restricciones limitan y condicionan las decisiones arquitectónic
 ### 2.1 Restricciones Técnicas
 - **R1 (Navegador y Dispositivos):** El cliente web debe funcionar en navegadores modernos (Chrome, Firefox, Edge, Safari) sin requerir plug-ins adicionales y ser operable desde tablets de consultorio.
 - **R2 (Tecnología Backend y Persistencia):** El servidor debe implementarse en Python utilizando el framework Flask para la API REST, y PostgreSQL como motor de base de datos relacional.
+**Aclaración de implementación TP4:** la arquitectura objetivo propone PostgreSQL como base de datos central. Para el incremento HU-01 se implementó SQLite, debido a su simplicidad de instalación y ejecución.
+
+La persistencia está encapsulada detrás de `RepositorioClinico`, por lo que puede reemplazarse el motor de base de datos sin modificar las reglas de validación ni el servicio de registro clínico.
+
+Esta decisión es una simplificación de alcance del TP4 y no implica que se hayan implementado todas las capacidades de persistencia, recuperación y operación previstas en el TP3.
+
 - **R3 (Sistemas externos):** la consulta a OMIA es de solo lectura (RF-09). No se asume una API de integración estable: el SRS declara que OMIA no es una API pensada para integración directa, y la forma de acceso debe confirmarse antes del TP4.
 
 ### 2.2 Restricciones del Equipo y Tecnología
