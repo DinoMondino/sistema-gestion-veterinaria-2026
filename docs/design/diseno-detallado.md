@@ -162,8 +162,6 @@ La relación entre `HistoriaClinica` y `Consulta` se representa para indicar que
 El diagrama es una abstracción del funcionamiento. Los diagramas de secuencia y de clases muestran las operaciones técnicas reales.
 
 
-`Veterinario` figura como entidad pero ningún control la lee: en el TP4 la autenticación está simulada (D2) y el servicio asigna `veterinario_id = 1`.
-
 **Ubicación de las reglas de negocio**
 
 | Regla | Dónde vive | Justificación |
@@ -194,8 +192,12 @@ El componente «Controladores REST» (`src/api/controladores.py`, `app.py`) no t
 | `Consulta` | Modelo de dominio | Entidad | `src/dominio/entidades.py` |
 
 ### 3.5 Diagramas de secuencia
+Los diagramas de secuencia detallan el funcionamiento interno de la API clínica que se representa de forma simplificada en la robustez.
 
-Los participantes son los del diagrama de robustez, más `ControladorREST` como adaptador HTTP (queda fuera de la robustez, ver 3.4, pero es parte del código y del TP3, y es quien decide los códigos de respuesta). `RepositorioClinicoSQLite` es la implementación del puerto `RepositorioClinico` que usa la aplicación. Cubren el flujo principal, el rechazo (el camino que pide el criterio de aceptación) y la falla de la base. Los caminos «mascota inexistente» (404) y «cuerpo que no es JSON» (400) son variantes del controlador y se describen en la tabla 3.5.4.
+Por eso incluyen `ControladorREST`, `ValidacionRegistrosClinicos`, `RepositorioClinicoSQLite` y SQLite.
+
+Se presentan los recorridos de registro exitoso, rechazo por datos inválidos y falla de persistencia. Los dos primeros corresponden directamente al comportamiento de HU-01.
+
 
 #### 3.5.1 Secuencia A — Guardado exitoso
 
@@ -462,7 +464,7 @@ Las clases `ControladorPantalla` y `FormularioNuevaConsulta` no aparecen: son Ja
 | V4 | El diseño inicial decía que `Consulta` decidía si fecha y peso son válidos | Se actualizó el diseño: lo decide `ValidacionRegistrosClinicos` (componente del TP3). Ver sección 5.3 |
 | V5 | El diseño inicial tenía `AutenticacionAutorizacion` y `GestionExcepciones` como participantes | Se quitaron de las secuencias: son los casos D2 y D3 de la sección 2.2 |
 | V6 | El código no tiene una clase `ControladorREST`: son funciones dentro de `crear_api` | Se representa como módulo en el diagrama; en las secuencias es el participante «ControladorREST» |
-| V10 | La robustez no incluye `ControladorREST` (es un adaptador HTTP sin lógica de dominio) pero el código y las secuencias sí lo tienen | Se mantiene fuera de la robustez y dentro de las secuencias y las clases, con la justificación de 3.4. El resto de los participantes de las secuencias coincide con la robustez |
+| V10 | La robustez presenta una API simplificada, mientras que el código separa controlador REST, servicio y validador | Se utilizan distintos niveles de detalle. La robustez representa el recorrido conceptual y las secuencias muestran las operaciones reales de la implementación. |
 | V7 | Los `GET` del controlador usan el repositorio directamente | Diferencia D5 de la sección 2.2 |
 | V8 | El servicio lee el contexto antes de validar (un 404 prevalece sobre un 422) | Las secuencias A y B ya lo reflejan; relación D4 |
 | V9 | El diseño anterior no mostraba que `guardar_consulta` también actualiza el peso vigente (CU-01, paso 6); el código lo hace en la misma transacción | Se actualizó la secuencia A, la regla RN-08 y la tabla GRASP. El encabezado de la pantalla se vuelve a consultar tras guardar |
