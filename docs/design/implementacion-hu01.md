@@ -1,35 +1,66 @@
+
 # TP4 — Parte B: Implementación de HU-01
 
-**Alcance:** nueva consulta clínica; validación de fecha, peso, síntomas y diagnóstico; conservación de datos ante rechazo; registro correcto en repositorio en memoria y listado en pantalla.
+## 1. Alcance
 
-## Recorrido
+Se implementó el registro de una nueva consulta veterinaria, con validación de fecha, peso, síntomas y diagnóstico.
 
-1. La interfaz (`templates/nueva_consulta.html`, `static/hu01.js`) conserva los campos del formulario y presenta errores.
-2. El controlador REST (`src/api/controladores.py`) recibe y responde JSON.
-3. El servicio (`src/aplicacion/servicio_registro.py`) coordina el caso de uso.
-4. El validador (`src/aplicacion/validacion.py`) aplica RF-10 y genera los errores para RF-11.
-5. Las entidades (`src/dominio/entidades.py`) representan Consulta, HistoriaClinica, Mascota y Veterinario.
-6. El repositorio abstracto y el repositorio en memoria (`src/infraestructura/repositorios.py`) aíslan la persistencia.
+Si los datos son inválidos, el sistema identifica los campos con errores, informa sus motivos y conserva los valores ingresados.
 
-## Demostración
+Si los datos son válidos, la consulta se guarda en SQLite y se incorpora al historial de la mascota.
 
-- Abrir `/`. Seleccionar peso `-2` y borrar la fecha. Completar síntomas y diagnóstico; pulsar «Guardar Consulta». Se muestran errores bajo cada campo, con borde rojo, y se mantienen los datos.
-- Corregir fecha y peso positivo y volver a guardar: la API responde con creación y la consulta aparece en la lista.
-- Los datos se guardan en la base SQLite `data/vetgestion.db`, así que **persisten al reiniciar el proceso**. Para volver al estado inicial se borra el archivo y la aplicación lo recrea con `schema.sql`.
+## 2. Componentes implementados
 
-## Decisiones de alcance
-
-- API Flask y frontend HTML/CSS/JavaScript separados, coherentes con las capas de la API y el MVC planteados en TP3.
-- La autenticación es simulada con un veterinario fijo. No existe conexión con OMIA ni procesamiento de pagos.
-- Se eligió **SQLite** como persistencia, detrás del puerto `RepositorioClinico` (clase `RepositorioClinicoSQL`). Es una simplificación respecto del TP3, que define PostgreSQL como base central (`DA-04`): cambiarla implica solo otra implementación del mismo puerto. Las pruebas usan SQLite en memoria.
-- El código anterior del TP2 en `docs/ui/mockups/` queda sin cambios; esta es una implementación independiente en la raíz y `src/`.
-
-## Contrato REST mínimo
-
-| Método | Ruta | Respuesta |
+| Componente | Archivo | Responsabilidad |
 |---|---|---|
-| GET | `/api/mascotas/1` | 200 y contexto de la mascota |
-| POST | `/api/mascotas/1/consultas` | 201 si se guarda; 422 y `errores` por campo si falla validación |
-| GET | `/api/mascotas/1/consultas` | 200 y consultas guardadas en memoria |
+| FormularioNuevaConsulta | `templates/nueva_consulta.html` | Presentar el formulario |
+| ControladorPantalla | `static/hu01.js` | Enviar datos, presentar errores y actualizar la pantalla |
+| Controlador REST | `src/api/controladores.py` | Recibir solicitudes HTTP y devolver respuestas JSON |
+| ServicioRegistroClinico | `src/aplicacion/servicio_registro.py` | Coordinar el registro |
+| ValidacionRegistrosClinicos | `src/aplicacion/validacion.py` | Validar los datos clínicos |
+| RepositorioClinico | `src/infraestructura/repositorios.py` | Definir las operaciones de persistencia |
+| RepositorioClinicoSQLite | `src/infraestructura/repositorios.py` | Guardar y consultar datos en SQLite |
+| Entidades del dominio | `src/dominio/entidades.py` | Representar Mascota, HistoriaClinica, Consulta y Veterinario |
 
-El error de validación se devuelve en un único objeto JSON; el formulario no se borra en los rechazos.
+## 3. Persistencia
+
+Se utiliza SQLite, con la base ubicada por defecto en `data/vetgestion.db`.
+
+El esquema se define en la constante `_ESQUEMA` de `src/infraestructura/repositorios.py` y se crea automáticamente al iniciar la aplicación.
+
+La operación `guardar_consulta` almacena la consulta y actualiza el peso vigente de la mascota cuando corresponde, dentro de una misma transacción.
+
+Los datos permanecen guardados después de reiniciar la aplicación.
+
+También existe `RepositorioClinicoEnMemoria`, utilizado como alternativa durante las pruebas.
+
+## 4. Respuestas de la API
+
+| Método | Ruta | Resultado |
+|---|---|---|
+| GET | `/api/mascotas/1` | 200: información de la mascota |
+| POST | `/api/mascotas/1/consultas` | 201: consulta guardada |
+| POST | `/api/mascotas/1/consultas` | 422: errores de validación |
+| POST | `/api/mascotas/1/consultas` | 400: cuerpo JSON inválido |
+| POST | `/api/mascotas/999/consultas` | 404: mascota inexistente |
+| POST | `/api/mascotas/1/consultas` | 503: error de persistencia |
+| GET | `/api/mascotas/1/consultas` | 200: listado de consultas |
+
+## 5. Demostración
+
+1. Ejecutar `python app.py`.
+2. Abrir `http://127.0.0.1:5000/`.
+3. Ingresar peso negativo y borrar la fecha.
+4. Presionar Guardar Consulta.
+5. Comprobar que aparecen los errores, no se guarda la consulta y se conservan los valores.
+6. Corregir los campos y guardar nuevamente.
+7. Comprobar que la consulta aparece en el listado y se actualiza el peso vigente.
+8. Reiniciar la aplicación y verificar que la consulta permanece guardada.
+
+## 6. Decisiones de alcance
+
+- La autenticación es simulada con un veterinario de demostración.
+- No se implementan OMIA, pagos ni otros módulos ajenos a HU-01.
+- SQLite reemplaza a PostgreSQL únicamente en el incremento implementado para TP4.
+- La base se mantiene detrás de `RepositorioClinico`, de modo que puede sustituirse su implementación sin modificar el servicio de registro.
+- El maquetado original del TP2 se mantiene separado en `docs/ui/mockups/`.
