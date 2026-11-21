@@ -1,8 +1,7 @@
 """Controlador REST: HTTP/JSON, sin reglas de negocio."""
-from datetime import date
 from flask import Blueprint, jsonify, request
 from src.aplicacion.servicio_registro import ServicioRegistroClinico
-from src.infraestructura.repositorios import RepositorioClinico
+from src.infraestructura.repositorios import ErrorPersistencia, RepositorioClinico
 
 def crear_api(servicio: ServicioRegistroClinico, repositorio: RepositorioClinico):
     api = Blueprint("api", __name__, url_prefix="/api")
@@ -22,7 +21,11 @@ def crear_api(servicio: ServicioRegistroClinico, repositorio: RepositorioClinico
         datos = request.get_json(silent=True)
         if not isinstance(datos, dict):
             return jsonify(error="Se esperaba un objeto JSON."), 400
-        resultado = servicio.registrar(mascota_id, datos)
+        try:
+            resultado = servicio.registrar(mascota_id, datos)
+        except ErrorPersistencia:
+            return jsonify(error="El sistema está en mantenimiento. La consulta no se guardó; "
+                                 "los datos cargados siguen en pantalla."), 503
         if resultado.estado == "no_encontrado":
             return jsonify(error="Mascota no encontrada."), 404
         if resultado.estado == "invalido":

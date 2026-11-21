@@ -18,7 +18,8 @@ RUTA_DB = os.environ.get("VETGESTION_DB", str(BASE / "data" / "vetgestion.db"))
 def crear_app(repositorio=None):
     app = Flask(__name__, template_folder=str(BASE / "templates"),
                 static_folder=str(BASE / "static"))
-    repo = repositorio if repositorio is not None else RepositorioClinicoSQLite(RUTA_DB)
+    repo = repositorio if repositorio is not None else RepositorioClinicoSQLite(
+        os.environ.get("VETGESTION_DB", RUTA_DB))
     servicio = ServicioRegistroClinico(repo, ValidacionRegistrosClinicos())
     app.register_blueprint(crear_api(servicio, repo))
 

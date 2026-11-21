@@ -15,6 +15,10 @@ from threading import RLock
 from src.dominio.entidades import Consulta, HistoriaClinica, Mascota, Veterinario
 
 
+class ErrorPersistencia(Exception):
+    """La base no pudo completar la operación; no quedó ningún dato parcial."""
+
+
 class RepositorioClinico(ABC):
     @abstractmethod
     def obtener_contexto(self, mascota_id: int):
@@ -24,7 +28,8 @@ class RepositorioClinico(ABC):
     def guardar_consulta(self, consulta: Consulta) -> Consulta:
         """Almacena una consulta válida, actualiza el peso vigente si
         corresponde y devuelve la consulta con ID asignado.
-        Lanza ValueError si la historia clínica no existe."""
+        Lanza ValueError si la historia clínica no existe y
+        ErrorPersistencia si la base falla."""
 
     @abstractmethod
     def listar_consultas(self, historia_id: int) -> list[Consulta]:
@@ -99,7 +104,10 @@ CREATE INDEX IF NOT EXISTS idx_consultas_historia
 
 
 class RepositorioClinicoSQLite(RepositorioClinico):
-    """Persistencia en SQLite. Pesos como TEXT para conservar la exactitud de Decimal."""
+    """Persistencia en SQLite. Pesos como TEXT para conservar la exactitud de Decimal.
+
+    Toda falla de la base (sqlite3.Error) se informa como ErrorPersistencia.
+    """
 
     def __init__(self, ruta=":memory:", sembrar_demo: bool = True):
         if str(ruta) != ":memory:":
@@ -129,41 +137,50 @@ class RepositorioClinicoSQLite(RepositorioClinico):
             self._con.close()
 
     def obtener_contexto(self, mascota_id: int):
-        with self._lock:
-            m = self._con.execute("SELECT * FROM mascotas WHERE id = ?",
-                                  (mascota_id,)).fetchone()
-            h = self._con.execute("SELECT * FROM historias WHERE mascota_id = ?",
-                                  (mascota_id,)).fetchone()
+        try:
+            with self._lock:
+                m = self._con.execute("SELECT * FROM mascotas WHERE id = ?",
+                                      (mascota_id,)).fetchone()
+                h = self._con.execute("SELECT * FROM historias WHERE mascota_id = ?",
+                                      (mascota_id,)).fetchone()
+        except sqlite3.Error as error:
+            raise ErrorPersistencia(str(error)) from error
         if m is None or h is None:
             return None
         return (Mascota(m["id"], m["nombre"], m["especie"], Decimal(m["peso_actual"])),
                 HistoriaClinica(h["id"], h["mascota_id"]))
 
     def guardar_consulta(self, consulta: Consulta) -> Consulta:
-        with self._lock, self._con:  # `with con` = commit, o rollback si hay excepción
-            h = self._con.execute("SELECT mascota_id FROM historias WHERE id = ?",
-                                  (consulta.historia_id,)).fetchone()
-            if h is None:
-                raise ValueError("Historia clínica inexistente.")
-            hay_posterior = self._con.execute(
-                "SELECT 1 FROM consultas WHERE historia_id = ? AND fecha > ? LIMIT 1",
-                (consulta.historia_id, consulta.fecha.isoformat())).fetchone()
-            cursor = self._con.execute(
-                "INSERT INTO consultas (historia_id, veterinario_id, fecha, peso,"
-                " sintomas, diagnostico, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (consulta.historia_id, consulta.veterinario_id,
-                 consulta.fecha.isoformat(), str(consulta.peso), consulta.sintomas,
-                 consulta.diagnostico, consulta.observaciones))
-            if not hay_posterior:
-                self._con.execute("UPDATE mascotas SET peso_actual = ? WHERE id = ?",
-                                  (str(consulta.peso), h["mascota_id"]))
-            return replace(consulta, id=cursor.lastrowid)
+        try:
+            with self._lock, self._con:  # `with con` = commit, o rollback si hay excepción
+                h = self._con.execute("SELECT mascota_id FROM historias WHERE id = ?",
+                                      (consulta.historia_id,)).fetchone()
+                if h is None:
+                    raise ValueError("Historia clínica inexistente.")
+                hay_posterior = self._con.execute(
+                    "SELECT 1 FROM consultas WHERE historia_id = ? AND fecha > ? LIMIT 1",
+                    (consulta.historia_id, consulta.fecha.isoformat())).fetchone()
+                cursor = self._con.execute(
+                    "INSERT INTO consultas (historia_id, veterinario_id, fecha, peso,"
+                    " sintomas, diagnostico, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (consulta.historia_id, consulta.veterinario_id,
+                     consulta.fecha.isoformat(), str(consulta.peso), consulta.sintomas,
+                     consulta.diagnostico, consulta.observaciones))
+                if not hay_posterior:
+                    self._con.execute("UPDATE mascotas SET peso_actual = ? WHERE id = ?",
+                                      (str(consulta.peso), h["mascota_id"]))
+                return replace(consulta, id=cursor.lastrowid)
+        except sqlite3.Error as error:
+            raise ErrorPersistencia(str(error)) from error
 
     def listar_consultas(self, historia_id: int) -> list[Consulta]:
-        with self._lock:
-            filas = self._con.execute(
-                "SELECT * FROM consultas WHERE historia_id = ?"
-                " ORDER BY fecha DESC, id DESC", (historia_id,)).fetchall()
+        try:
+            with self._lock:
+                filas = self._con.execute(
+                    "SELECT * FROM consultas WHERE historia_id = ?"
+                    " ORDER BY fecha DESC, id DESC", (historia_id,)).fetchall()
+        except sqlite3.Error as error:
+            raise ErrorPersistencia(str(error)) from error
         return [Consulta(id=f["id"], historia_id=f["historia_id"],
                          veterinario_id=f["veterinario_id"],
                          fecha=date.fromisoformat(f["fecha"]),
