@@ -1,0 +1,1 @@
+xdg-open tests/cobertura/html/class_index.html

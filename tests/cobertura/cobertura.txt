@@ -10,6 +10,6 @@ src/aplicacion/validacion.py             31      0     10      0   100%
 src/dominio/__init__.py                   0      0      0      0   100%
 src/dominio/entidades.py                 12      0      0      0   100%
 src/infraestructura/__init__.py           0      0      0      0   100%
-src/infraestructura/repositorios.py      96      0     14      0   100%
+src/infraestructura/repositorios.py      99      0     16      0   100%
 ---------------------------------------------------------------------------------
-TOTAL                                   221      1     42      1    99%
+TOTAL                                   224      1     44      1    99%
