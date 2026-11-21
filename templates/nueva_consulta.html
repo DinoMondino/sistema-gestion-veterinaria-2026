@@ -28,9 +28,14 @@
         <input id="diagnostico" name="diagnostico" aria-describedby="error-diagnostico">
         <small id="error-diagnostico" class="error"></small></div>
       <div class="campo"><label for="observaciones">Observaciones adicionales</label>
-        <textarea id="observaciones" name="observaciones" rows="3"></textarea></div>
+        <textarea id="observaciones" name="observaciones" rows="3" aria-describedby="error-observaciones"></textarea>
+        <small id="error-observaciones" class="error"></small></div>
+      <div id="bloque-confirmacion" class="confirmacion" hidden>
+        <label class="check"><input type="checkbox" id="confirmar_atipicos">
+          Confirmo que los datos marcados en amarillo son correctos</label>
+      </div>
       <button type="submit" id="guardar">Guardar Consulta</button>
-      <p class="ayuda">* Campos obligatorios. Ante un error no se borra lo ingresado.</p>
+      <p class="ayuda">* Campos obligatorios. Ante un error o una advertencia no se borra lo ingresado.</p>
     </form>
     <section class="historial"><h2>Consultas guardadas</h2><ul id="consultas"></ul></section>
     <footer>Demostración académica · Datos ficticios · Persistencia en SQLite</footer>

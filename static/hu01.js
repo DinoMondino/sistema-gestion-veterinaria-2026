@@ -7,22 +7,36 @@ const guardar = document.getElementById("guardar");
 const campos = ["fecha", "peso", "sintomas", "diagnostico", "observaciones"];
 
 // Modelo de formulario (MVC): se mantiene en los propios controles del DOM.
-function mostrarErrores(errores) {
-  document.querySelectorAll(".campo").forEach(c => c.classList.remove("invalido"));
+const confirmacion = document.getElementById("confirmar_atipicos");
+const bloqueConfirmacion = document.getElementById("bloque-confirmacion");
+
+function limpiarMarcas() {
+  document.querySelectorAll(".campo").forEach(c => c.classList.remove("invalido", "advertido"));
   document.querySelectorAll(".error").forEach(e => e.textContent = "");
   campos.forEach(c => document.getElementById(c).removeAttribute("aria-invalid"));
-  for (const [campo, texto] of Object.entries(errores)) {
+}
+
+// clase: "invalido" (error que bloquea) o "advertido" (dato poco habitual que pide confirmación).
+function marcar(mensajes, clase) {
+  for (const [campo, texto] of Object.entries(mensajes)) {
     const input = document.getElementById(campo);
     const error = document.getElementById("error-" + campo);
     if (input && error) {
-      input.closest(".campo").classList.add("invalido");
-      input.setAttribute("aria-invalid", "true");
+      input.closest(".campo").classList.add(clase);
+      if (clase === "invalido") input.setAttribute("aria-invalid", "true");
       error.textContent = texto;
     }
   }
-  const primer = Object.keys(errores)[0];
+  const primer = Object.keys(mensajes)[0];
   if (primer && document.getElementById(primer)) document.getElementById(primer).focus();
 }
+
+// La confirmación vale solo para los valores que se mostraron: si cambian, se pide de nuevo.
+function reiniciarConfirmacion() {
+  confirmacion.checked = false;
+  bloqueConfirmacion.hidden = true;
+}
+["fecha", "peso"].forEach(id => document.getElementById(id).addEventListener("input", reiniciarConfirmacion));
 
 async function cargarContexto() {
   const respuesta = await fetch(`/api/mascotas/${mascotaId}`);
@@ -51,25 +65,36 @@ async function cargarConsultas() {
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
+  const confirmado = confirmacion.checked;
   guardar.disabled = true;
   mensaje.textContent = "";
-  mostrarErrores({});
+  limpiarMarcas();
   const datos = Object.fromEntries(new FormData(form));
+  datos.confirmar_atipicos = confirmado;
   try {
     const respuesta = await fetch(`/api/mascotas/${mascotaId}/consultas`, {
       method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(datos)
     });
     const cuerpo = await respuesta.json();
     if (respuesta.status === 422) {
-      mostrarErrores(cuerpo.errores);
+      marcar(cuerpo.errores, "invalido");
       mensaje.className = "mensaje fallo";
       mensaje.textContent = "No se pudo guardar la consulta. Corregí los campos marcados. Los datos cargados se conservaron.";
       return; // No resetear formulario.
+    }
+    if (respuesta.status === 409) {
+      marcar(cuerpo.advertencias, "advertido");
+      bloqueConfirmacion.hidden = false;
+      confirmacion.checked = false;
+      mensaje.className = "mensaje aviso";
+      mensaje.textContent = "Hay datos poco habituales (marcados en amarillo). Revisalos: si son correctos, tildá la confirmación y volvé a guardar. Todavía no se guardó nada y los datos cargados se conservaron.";
+      return;
     }
     if (!respuesta.ok) throw new Error(cuerpo.error || "No se pudo guardar la consulta.");
     mensaje.className = "mensaje exito";
     mensaje.textContent = cuerpo.mensaje;
     form.reset(); // Solo luego de guardado exitoso.
+    reiniciarConfirmacion();
     await cargarContexto();
   } catch (error) {
     mensaje.className = "mensaje fallo";

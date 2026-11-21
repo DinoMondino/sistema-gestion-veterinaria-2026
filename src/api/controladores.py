@@ -22,7 +22,8 @@ def crear_api(servicio: ServicioRegistroClinico, repositorio: RepositorioClinico
         if not isinstance(datos, dict):
             return jsonify(error="Se esperaba un objeto JSON."), 400
         try:
-            resultado = servicio.registrar(mascota_id, datos)
+            confirmado = datos.get("confirmar_atipicos") is True   # solo el booleano true confirma
+            resultado = servicio.registrar(mascota_id, datos, confirmado)
         except ErrorPersistencia:
             return jsonify(error="El sistema está en mantenimiento. La consulta no se guardó; "
                                  "los datos cargados siguen en pantalla."), 503
@@ -31,6 +32,9 @@ def crear_api(servicio: ServicioRegistroClinico, repositorio: RepositorioClinico
         if resultado.estado == "invalido":
             return jsonify(error="La consulta contiene datos inválidos.",
                            errores=resultado.errores), 422
+        if resultado.estado == "requiere_confirmacion":
+            return jsonify(error="Hay datos poco habituales que requieren confirmación.",
+                           advertencias=resultado.advertencias), 409
         return jsonify(mensaje="Consulta guardada correctamente.",
                        consulta_id=resultado.consulta.id), 201
 
