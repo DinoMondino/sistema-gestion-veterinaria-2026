@@ -148,9 +148,19 @@ Leyenda: círculo punteado = actor; óvalo azul = *boundary* (frontera); círcul
 
 ```
 
-Reglas de robustez verificadas: el actor solo habla con la frontera; la frontera solo habla con un control; ningún control se conecta a otra frontera; las entidades solo se alcanzan desde controles (el repositorio) y entre sí; no hay flechas frontera-entidad ni actor-control.
 
-**Por qué no figura `ControladorREST`.** Los controladores REST del TP3 son un adaptador de transporte: traducen HTTP/JSON a una llamada al servicio y el resultado a un código de respuesta (201, 400, 404, 422, 503), sin decidir nada del dominio. La robustez modela la lógica de la HU, no el medio por el que viaja; por eso la comunicación entre `ControladorPantalla` y `ServicioRegistroClinico` se dibuja directa, y el adaptador HTTP se muestra en las secuencias (3.5) y en el modelo de clases (4.1), donde se ven los mensajes y los códigos de respuesta.
+**Criterio de simplificación:** el diagrama de robustez representa los elementos principales que intervienen en HU-01, sin mostrar el protocolo HTTP ni las operaciones internas de la API.
+
+`ControladorPantalla` coordina la interacción con el formulario y presenta los errores de validación.
+
+La frontera `ServicioRegistroClinico` representa conceptualmente el acceso a la API clínica. En la implementación, el servicio de registro y el validador son componentes internos del servidor.
+
+`RepositorioClinico` representa el acceso a los datos de las mascotas, sus historias clínicas y consultas.
+
+La relación entre `HistoriaClinica` y `Consulta` se representa para indicar que una historia clínica puede registrar múltiples consultas.
+
+El diagrama es una abstracción del funcionamiento. Los diagramas de secuencia y de clases muestran las operaciones técnicas reales.
+
 
 `Veterinario` figura como entidad pero ningún control la lee: en el TP4 la autenticación está simulada (D2) y el servicio asigna `veterinario_id = 1`.
 
