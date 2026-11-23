@@ -1936,3 +1936,124 @@ El problema más serio está concentrado en **Prescribir Medicación**, donde la
 Además, la evaluación debe quedar como **primer análisis crítico**, no como verdad definitiva: ustedes tienen que revisar cada uno de estos 40 resultados y decidir **aceptar/rechazar**, tal como exige la sección 4.5. 
 
 Y para la entrega, recuerden que los cuatro documentos de `heuristic-review` deben contener no solamente esta evaluación, sino también **el prompt usado, la respuesta completa de la IA, la decisión del grupo para cada hallazgo y los ciclos adicionales de modificación**. 
+
+
+
+---
+## Entrega TP4
+Uso crítico de IA:
+ 
+Para el TP4 se utilizó inteligencia artificial generativa como apoyo en las tres partes del trabajo. Se ha utilizado principalmente Claude para la implementación de código y ChatGPT como herramienta de análisis.
+
+La cátedra pidió expresamente que el código de la Parte B no se escribiera a mano, sino que se generara con IA a partir de los diagramas de secuencia. Por eso, el trabajo del grupo en esta entrega estuvo centrado en la verificación, comprobando que lo generado cumpliera las reglas de la Referencia teórica, que el código coincidiera con el diseño y que las pruebas verificaran comportamiento real y no solo que "pasaran".
+
+| Paso | Qué se solicitó a la IA | Qué intervino el grupo |
+|---|---|---|
+| 1. Elección de la HU | Analizar las HU del TP1 contra las condiciones de la consigna | Decidir y justificar la elección de HU-01 |
+| 2. Análisis tridimensional | Borrador de la tabla de funcionalidad, estructura y calidad | Verificar la separación de las dimensiones y las decisiones que condiciona la calidad |
+| 3. Diagrama de robustez | Archivo `.md` con el diagrama, la ubicación de las reglas de negocio y la asignación a componentes del TP3 | Revisar contra las reglas de la Referencia y simplificar |
+| 4. Diagramas de secuencia | Secuencias del flujo de éxito y del rechazo | Simplificar los diagramas y verificar los mensajes contra el catálogo del TP3 |
+| 5B. Implementación | Código completo a partir de las secuencias (requisito de la cátedra) | Contrastar código y diseño, y resolver cada diferencia |
+| 5. Modelo de clases | Archivo `.md` con el diagrama obtenido del código y su validación | Revisar cada diferencia y decidir si se corregía el código o el diseño |
+| 6. Pruebas unitarias | Casos de prueba, pruebas automatizadas y cobertura | Verificar que las pruebas detecten errores reales |
+
+
+### Paso 1: Análisis de las HU para la elección de la HU a trabajar
+ 
+**Qué se solicitó.** Se pidió a la IA que analizara las historias de usuario del TP1 contra las tres condiciones que pide la consigna.
+ 
+**Qué se obtuvo.** Un análisis de las HU candidatas respecto de esas condiciones, usando la tabla de trazabilidad y el catálogo de componentes del TP3.
+ 
+**Qué se decidió.** La elección final fue del grupo. Se eligió HU-01 (datos obligatorios incompletos o con formato inválido) porque, además de cumplir las tres condiciones, es la puerta de entrada de todo dato clínico. El grupo también dejó explícito el alcance real: de `EC-03` solo interviene la táctica de transacciones y `EC-02` (autorización) queda fuera de la HU. La justificación completa está en la sección 1.3 del documento de diseño.
+
+
+### Paso 2: Análisis tridimensional
+ 
+**Qué se solicitó.** Una tabla con las tres dimensiones separadas (funcionalidad, estructura y calidad), con una fila por cada criterio de aceptación y por cada escenario de calidad que alcanza a la HU.
+ 
+**Qué se obtuvo.** Un borrador de la tabla.
+ 
+**Qué se revisó y se dejó en el documento.** El grupo verificó que las tres dimensiones no se mezclaran, es decir, que "qué hace", "qué componentes lo hacen" y "qué propiedad debe cumplir" estuvieran en columnas distintas. También verificó que al menos un atributo de calidad condicionara una decisión concreta: `EC-01` (Operabilidad) condiciona `DA-02`, que establece conservar el estado del formulario en el cliente y devolver los errores por campo en una sola respuesta. Se dejó asentado, además, que la medida de tiempo de `EC-01` (45 segundos y 8 interacciones) no puede verificarse con una prueba unitaria y se cubre con una prueba de uso (`M-04`).
+
+
+### Paso 3: Archivo `.md` del diagrama de robustez
+ 
+**Qué se solicitó.** Un archivo Markdown con el diagrama de robustez en Mermaid y con leyenda, la ubicación de cada regla de negocio (pantalla, controlador o entidad) y una tabla que asigne cada elemento a un componente del TP3 y a su capa.
+ 
+**Qué se obtuvo.** El diagrama, ocho reglas de negocio (RN-01 a RN-08) con su ubicación y la tabla de asignación a componentes.
+ 
+**Qué se aceptó y qué se modificó.** El grupo revisó el resultado contra las reglas de la Referencia: cada elemento en su categoría (actor, frontera, control o entidad), ninguna flecha prohibida, entidades tomadas de la tabla del Paso 1 y ninguna regla de validación en la pantalla. Esto último se mantuvo en el código: el formulario usa `novalidate` y el JavaScript solo muestra lo que informa el servidor. Se acordó un criterio de simplificación: la robustez muestra el recorrido conceptual, sin el protocolo HTTP ni las operaciones internas de la API, y la API clínica se representa como una sola frontera. La diferencia de nivel de detalle con las secuencias y el modelo de clases se documentó de forma explícita en lugar de forzar que los diagramas fueran idénticos.
+
+
+### Paso 4: Diagramas de secuencia
+ 
+**Qué se solicitó.** Diagramas de secuencia para el flujo de éxito y para el rechazo por datos inválidos (los dos caminos que piden los criterios de aceptación), usando los participantes de la robustez, junto con la tabla de asignación de responsabilidades con criterios GRASP.
+ 
+**Qué se obtuvo.** Una primera versión de ambos diagramas, más detallada, con participantes que luego resultaron innecesarios.
+ 
+**Qué se modificó y por qué.** Los diagramas se simplificaron para que entraran en una pantalla y se leyeran con facilidad:
+ 
+- Se sacaron los participantes *Autenticación y autorización* y *Gestión de excepciones*. La autenticación está simulada porque la consigna deja afuera la autenticación real, y la gestión de fallos la resuelve el propio controlador REST porque hay un solo caso de fallo; un componente aparte habría sido indirección sin beneficio.
+- El rechazo se dejó en una única secuencia que cubre peso negativo, fecha en blanco y cualquier otro campo inválido, porque la validación recorre todos los campos y los informa juntos.
+- Se agregó una tercera secuencia (falla de la base de datos) para que la táctica de transacciones y rollback de `EC-03` quede visible como un mensaje concreto.
+**Verificación.** Se comprobó que cada mensaje entre componentes distintos existiera en el catálogo de relaciones del TP3. Las dos relaciones que no existían (el servicio que lee el contexto del paciente y las lecturas del controlador directo al repositorio) no se ocultaron: se documentaron como diferencias D4 y D5, con su actualización pendiente en `arquitectura.md`.
+
+
+  ### Paso 5B: Implementación en código de los diagramas de secuencia
+ 
+**Qué se solicitó.** Generar el código de la HU a partir de las secuencias, de modo que cada participante fuera una clase y cada mensaje una operación con el mismo nombre, con una interfaz gráfica mínima en Flask, persistencia detrás de la interfaz del repositorio y sin lógica de negocio en la pantalla. El código no se escribió a mano.
+ 
+**Qué se obtuvo.** La estructura completa en `src/`: entidades, controlador REST, servicio de registro, validación, interfaz `RepositorioClinico` con dos implementaciones (SQLite y en memoria), la plantilla y el JavaScript del formulario.
+ 
+**Qué se verificó y qué diferencias aparecieron.** El código generado funcionaba, pero no siempre coincidía con lo diseñado. Estas diferencias se detectaron al contrastar código y secuencias y se resolvieron una por una:
+ 
+- La creación de la `Consulta` y la decisión sobre si fecha y peso son válidos no seguían el diseño inicial. En el código las asumen `ServicioRegistroClinico` (Creador) y `ValidacionRegistrosClinicos`. Se actualizó el diseño y no el código, porque el TP3 define la validación como un componente reutilizable por prescripciones (HU-03), y ponerla en `Consulta` obligaría a duplicarla.
+- El código actualiza el peso vigente de la mascota dentro de la misma transacción que guarda la consulta (CU-01, paso 6), y el diseño inicial no lo mostraba. Se agregó la regla RN-08 y se actualizó la secuencia.
+- Un rechazo por validación se modela con un `ResultadoRegistro` y no con una excepción, porque es el flujo habitual de la HU. Solo la falla de la base es excepcional (`ErrorPersistencia`).
+- Los `GET` del controlador leen del repositorio sin pasar por un servicio. Es una desviación consciente (D5), documentada, que se corrige al implementar CU-02.
+- El código no validaba en el cliente y el TP3 lo preveía (D6). El grupo había aceptado el hallazgo H5 del TP2 (marcar los campos `required`) y está pendiente de aplicar en `nueva_consulta.html`.
+**Defecto encontrado al usar el sistema.** Al ejecutar la aplicación se vio que, tras guardar la consulta más nueva, el encabezado seguía mostrando el peso anterior: el controlador de pantalla consultaba el contexto de la mascota solo al cargar la página. Ninguna prueba automática lo había detectado. Se corrigió `hu01.js` y se agregaron pruebas de regresión sobre RN-08.
+
+
+  ### Paso 5: Archivo `.md` del modelo de clases
+ 
+**Qué se solicitó.** Un diagrama de clases obtenido por ingeniería inversa del código implementado, su validación contra la robustez y las secuencias, la justificación del diseño con criterios GRASP y la tabla de trazabilidad (HU → componente C4 → clases → archivo → pruebas).
+ 
+**Qué se obtuvo.** El diagrama de clases, una tabla de diferencias entre diseño y código (V1 a V10), la tabla de asignación de responsabilidades y la tabla de trazabilidad.
+ 
+**Qué se revisó.** El grupo comprobó que todo lo que aparece en el diagrama tuviera respaldo en alguna secuencia, y a la inversa. Las excepciones se explicaron: `ControladorPantalla` y `FormularioNuevaConsulta` no figuran porque son JavaScript y HTML y no clases de Python; `ControladorREST` aparece como módulo porque en el código son funciones; `RepositorioClinicoEnMemoria` solo reemplaza a la implementación SQLite en las pruebas; y `Veterinario` solo se referencia por identificador porque la autenticación está simulada. En todas las diferencias entre diseño y código se decidió actualizar el diseño y no el código, dejando asentado el motivo de cada una. El diseño se mantuvo acotado a dos patrones, Repositorio e Inyección de dependencias, cada uno con el problema que resuelve.
+ 
+**Decisión que queda abierta a discusión.** Las entidades son contenedores de datos (`dataclass` inmutables) y las reglas de validación viven en `ValidacionRegistrosClinicos`. El grupo asumió este sacrificio por la reutilización con HU-03 y lo documentó en la sección 5.3 junto con la alternativa descartada, y puede defenderlo oralmente.
+
+ 
+ 
+### Paso 6: Pruebas unitarias
+ 
+**Qué se solicitó.** Una tabla de casos de prueba de caja negra (clases de equivalencia y valores límite derivados de los criterios de aceptación) y de caja blanca (una prueba por camino independiente), las pruebas automatizadas con pytest y la medición de cobertura.
+ 
+**Qué se obtuvo.** Casos de prueba con identificadores `CP-xx` trazados a su origen (criterio de aceptación, escenario de calidad o parte del código), distribuidos en pruebas de validación, de servicio, de repositorios (como pruebas de contrato que corren sobre las dos implementaciones) y de la API con el cliente de pruebas de Flask. La complejidad ciclomática de cada operación se calculó con un script sobre el árbol sintáctico y se asignó un caso por camino independiente.
+ 
+**Qué se verificó para que las pruebas verificaran comportamiento real.**
+ 
+- Cada prueba verifica un solo comportamiento y crea su propio repositorio, de modo que no depende de otra. No se prueba a través de la interfaz gráfica; lo que solo puede probarse allí (resaltado, foco, tiempos) se cubre con pruebas manuales documentadas (`M-01` a `M-06`).
+- Para detectar pruebas que pasan pero verifican poco, se aplicaron 28 cambios deliberados al código (invertir una comparación, cambiar un código HTTP, no actualizar el peso vigente, apagar las claves foráneas, entre otros) y se comprobó que la suite fallaba con cada uno. Las 28 fueron detectadas.
+- El propio análisis de cobertura señaló que el validador no tenía límites definidos (por ejemplo, aceptaba un peso de `1e999` o una fecha de año 1). Eso llevó a definir umbrales de integridad clínica (U-01 a U-09, en `src/aplicacion/umbrales.py`) y a agregar los casos correspondientes (`CP-62` a `CP-118`).
+**Resultado.** 133 pruebas, todas pasan desde cero, con una cobertura combinada de líneas y ramas del 99 %. La única línea no cubierta es la que arranca el servidor Flask (`app.run`), que no tiene sentido ejecutar en una prueba.
+
+
+
+ ### Qué se corrigió o se descartó de lo generado por la IA
+ 
+- Se descartó, del diseño inicial, que `HistoriaClinica` creara la consulta y que `Consulta` decidiera su propia validez, a favor de `ServicioRegistroClinico` y `ValidacionRegistrosClinicos`.
+- Se descartaron de las secuencias los participantes de autenticación y de gestión de excepciones, por no aportar nada a esta HU.
+- Se unificaron en un único puerto `RepositorioClinico` las dos interfaces de repositorio (`RepositorioMascotas` y `RepositorioClinico`) del diseño inicial.
+- Se agregó la regla RN-08 (peso vigente), que el diseño inicial no contemplaba y el código sí.
+- Se corrigió el defecto del peso desactualizado en pantalla, que el código generado tenía y las pruebas no detectaban.
+- Se documentaron, y no se ocultaron, las diferencias con el TP3 (D1 a D6) y con el modelo de dominio del TP1.
+
+
+### Dinámica de trabajo y reflexión final
+ 
+La IA se utilizó como generadora de borradores (diagramas, código y casos de prueba) y el grupo condujo la verificación. Lo que se pidió en cada paso partió de los artefactos ya aprobados: la consigna, los criterios de aceptación del TP1, la arquitectura del TP3 y los diagramas del paso anterior. Cada resultado se contrastó con las reglas de la Referencia teórica antes de pasar al siguiente.
+ 
+El principal aprendizaje fue que el código generado puede funcionar y aun así apartarse del diseño: las diferencias aparecieron al contrastar el código con las secuencias, y el defecto del peso solo apareció al usar el sistema, no al correr las pruebas. Por eso se sumó a las pruebas automáticas la prueba por mutación y las pruebas manuales sobre la interfaz. Como resultado, el grupo puede justificar cada decisión de diseño y mostrar el sistema funcionando.
