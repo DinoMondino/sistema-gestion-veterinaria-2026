@@ -303,67 +303,6 @@ sequenceDiagram
     UI-->>Vet: campos en rojo con su motivo y datos conservados
 ```
 
-#### 3.6.3 Secuencia C — Dato atípico que requiere confirmación (extensión D7)
-
-```mermaid
-sequenceDiagram
-    actor Vet as Médico Veterinario
-    participant UI as FormularioNuevaConsulta
-    participant CP as ControladorPantalla
-    participant SRV as ServicioRegistroClinico
-    participant VAL as ValidacionRegistrosClinicos
-    participant REPO as RepositorioClinicoSQLite
-
-    Vet->>UI: pulsa Guardar Consulta (peso 14 kg; el último era 6,8 kg)
-    UI->>CP: submit
-    CP->>SRV: POST (confirmar_atipicos false)
-    SRV->>REPO: obtener_contexto(mascota_id)
-    REPO-->>SRV: (Mascota, HistoriaClinica)
-    SRV->>VAL: validar(datos)
-    VAL-->>SRV: (normalizados, sin errores)
-    SRV->>VAL: advertencias(normalizados, referencia de peso)
-    VAL-->>SRV: advertencia en peso (fuera de la banda esperada U-07)
-    Note over SRV,REPO: avisos y no confirmado: no se crea la Consulta ni se guarda nada
-    SRV-->>CP: ResultadoRegistro requiere_confirmacion → HTTP 409 con advertencias
-    CP->>UI: marcar el campo en amarillo y mostrar la casilla de confirmación
-    UI-->>Vet: «Revisalos: si son correctos, tildá la confirmación y volvé a guardar»
-    Vet->>UI: tilda la casilla y pulsa Guardar Consulta
-    UI->>CP: submit
-    CP->>SRV: POST (confirmar_atipicos true)
-    SRV->>VAL: validar(datos) y advertencias(...)
-    VAL-->>SRV: mismas advertencias
-    Note over SRV: hay avisos pero está confirmado: se continúa
-    SRV->>REPO: guardar_consulta(consulta)
-    REPO-->>SRV: Consulta con id
-    SRV-->>CP: ResultadoRegistro creado → HTTP 201
-    CP->>UI: confirmar y reiniciar el formulario
-```
-
-Si el veterinario modifica la fecha o el peso después de ver la advertencia, la casilla se destilda y se oculta (`reiniciarConfirmacion`): la confirmación vale solo para los valores que se mostraron.
-
-#### 3.6.4 Secuencia D — Falla de la base al guardar (`EC-03`)
-
-No la exige el criterio de aceptación de HU-01; cubre la táctica *transacciones y rollback* de `EC-03` (`DA-04`, `DA-05`).
-
-```mermaid
-sequenceDiagram
-    actor Vet as Médico Veterinario
-    participant UI as FormularioNuevaConsulta
-    participant CP as ControladorPantalla
-    participant SRV as ServicioRegistroClinico
-    participant REPO as RepositorioClinicoSQLite
-    participant DB as SQLite
-
-    CP->>SRV: POST /api/mascotas/id/consultas (datos válidos)
-    SRV->>REPO: guardar_consulta(consulta)
-    REPO->>DB: INSERT INTO consultas y UPDATE del peso vigente
-    DB--xREPO: error de la base
-    Note over REPO,DB: ROLLBACK automático: no queda ni la consulta ni el cambio de peso
-    REPO--xSRV: ErrorPersistencia
-    SRV--xCP: la excepción se propaga → HTTP 503 con aviso de mantenimiento
-    CP->>UI: mostrar el aviso sin reiniciar el formulario
-    UI-->>Vet: no se guardó, los datos siguen en pantalla
-```
 
 #### 3.6.5 Otros caminos
 
